@@ -2,7 +2,7 @@
 Construction of seismicity models and maps based on Voronoi diagrams.
 This approach also includes a propagation of earthquake location and magnitude uncertainties, that produces a data-driven smoothing of spatial seismicity patterns.
 
-#```diff
+```diff
 - Use this program at your own risks! We cannot guarantee the exacteness and the reliability of any program included in this repository.
 ```
 
