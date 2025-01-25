@@ -2,8 +2,6 @@
 Construction of seismicity models and maps based on Voronoi diagrams.
 This approach also includes a propagation of earthquake location and magnitude uncertainties, that produces a data-driven smoothing of spatial seismicity patterns.
 
-> [!CAUTION]
-> Use this program at your own risks! We cannot guarantee the exacteness and the reliability of any program included in this repository.
 
 The documentation is still under-construction. 
 Tutorials and examples will be included to assist interested users with our input formats, and with the use of the programs.
@@ -21,3 +19,5 @@ Tutorials and examples will be included to assist interested users with our inpu
 
 * **`compute_ab_values.py`** 
 
+> [!CAUTION]
+> Use this program at your own risks! We cannot guarantee the exacteness and the reliability of any program included in this repository.
