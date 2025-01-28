@@ -186,7 +186,7 @@ def load_points(filename):
     - Polygons: one vertex per line, two columns: lon, lat
     - Points/Epicenters: one epicenter per line, 4 or 8 columns
         * 4 columns format: floating date, lon, lat, magnitude
-        * 8 columns format: floating date, lon, lat, mag, lon_unc_smaj_km, loc_unc_smin_km, loc_unc_az, mag_unc
+        * 8 columns format: floating date, lon, lat, mag, loc_unc_smaj_km, loc_unc_smin_km, loc_unc_az, mag_unc
     """
     def _check_polygon_validity(p):
         if not p.is_valid:
