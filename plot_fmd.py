@@ -20,7 +20,7 @@ def _set_value_if_not_nan(value, additional_condition=True):
 if __name__ == "__main__":
     
     # Read input arguments:
-    parser = ArgumentParser(description="Plot Frequencey-Magnitude Distributions (FMD) for a set of pixels in a zoneless model")
+    parser = ArgumentParser(description="Plot Frequency-Magnitude Distributions (FMD) for a set of pixels in a zoneless model")
     parser.add_argument("configfile", 
                         help="Configuration file")
 

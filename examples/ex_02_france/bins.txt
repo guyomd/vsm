@@ -1,0 +1,10 @@
+# Magnitude bins:
+# 1 bin per line
+# Bin format: Index  Lower_value(inclusive) Upper_value(exclusive) Starting_date Ending_date
+1	3.0	3.5	1900.0 2017.0
+2	3.5	4.0	1900.0 2017.0
+3	4.0 4.5	1900.0 2017.0
+4	4.5	5.0	1900.0 2017.0
+5	5.0	5.5	1900.0 2017.0
+6	5.5	6.0	1900.0 2017.0
+7	6.0	6.5	1900.0 2017.0
