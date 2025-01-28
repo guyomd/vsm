@@ -26,6 +26,43 @@ Tutorials and examples will be included to assist interested users with our inpu
 ## File formats ##
 
 ### Input files ###
+* **Configuration file** (_e.g.,_ `parameters.txt`): Define the list of input files and settings for each application. Each line starting with "#" is considered as a comment and skipped.
+  ```
+  # VSM CONFIGURATION FILE
+  # -- Define input files and output directories --
+  file_for_epicenters: epicenters_synthetics.txt
+  file_for_geographical_bounds: bounds.txt
+  file_for_magnitude_bins: bins.txt
+  #file_for_FMD_limits_and_durations: fmd_info.txt
+  #file_for_prior_b_information: b_prior_info.txt
+  output_directory_for_files: results
+  output_directory_for_figures: figures
+  # -- Specification of input CRS and internal CRS used for the computation of areas --
+  input_CRS: EPSG:4326 
+  # NB: EPSG:4326 --> WGS-84
+  internal_equal_area_CRS: EPSG:2154  
+  # NB: EPSG:2154 --> Lambert 93
+  unit_for_internal_CRS_coordinates: m
+  # -- Calculation settings --
+  mesh_discretization_step: 0.5 deg
+  # NB: available units for step: km, deg
+  density_scaling_factor: 1000.0
+  skip_ab_if_missing_priors: True
+  define_completeness_automatically: False
+  enable_verbosity: True
+  # -- Options governing the propagation of uncertainties --
+  nb_bootstrap_samples: 100
+  perturb_magnitudes: True
+  save_bootstrap_realizations: False
+  nb_parallel_tasks: 3
+  b_value_to_remove_bias_on_perturbed_magnitudes: 1.0
+  save_bootstrap_realizations: False
+    ```
+* **Magnitude-bin information file** (_e.g.,_ `bins.txt`):
+* **Target geographical area** (_e.g.,_ `bounds.txt`):
+* **Earthquake catalogue** (_e.g.,_ `epicenters.txt`):
+* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`):
+* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`):
 
 ### Output files ###
 
