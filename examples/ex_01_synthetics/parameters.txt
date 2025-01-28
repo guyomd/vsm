@@ -1,0 +1,22 @@
+file_for_epicenters: epicenters_synthetics.txt
+file_for_geographical_bounds: bounds.txt
+file_for_magnitude_bins: bins.txt
+#file_for_FMD_limits_and_durations: fmd_info.txt
+#file_for_prior_b_information: b_prior_info.txt
+output_directory_for_files: results
+output_directory_for_figures: figures
+input_CRS: EPSG:4326 
+# NB: EPSG:4326 --> WGS-84
+internal_equal_area_CRS: EPSG:2154  
+# NB: EPSG:2154 --> Lambert 93
+unit_for_internal_CRS_coordinates: m
+mesh_discretization_step: 0.5 deg
+# NB: available units for step: km, deg
+density_scaling_factor: 1000.0
+skip_ab_if_missing_priors: True
+enable_verbosity: True
+nb_bootstrap_samples: 100
+save_bootstrap_realizations: False
+nb_parallel_tasks: 10
+perturb_magnitudes: True
+b_value_to_remove_bias_on_perturbed_magnitudes: 1.0
