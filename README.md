@@ -23,6 +23,27 @@ This package consists in two main modules added of a suite of utilities for plot
 ## Examples ##
 Tutorials and examples will be included to assist interested users with our input formats, and with the use of the programs.
 
+
+### Calculation of earthquake counts/density per magnitude bin ###
+<ins>*Syntax*</ins>: `python voronoi_smoothing.py parameters.txt`
+> [!NOTE]
+> A full list of available options can be obtained using the `-h` flag, _i.e.,_ `python voronoi_smoothing.py -h`.
+
+### Estimation of (_a_, _b_) parameters of the Gutenberg & Richter law[^1] ###
+<ins>*Syntax*</ins>: `python compute_ab_values.py parameters.txt`
+> [!NOTE]
+> A full list of available options can be obtained using the `-h` flag, _i.e.,_ `python compute_ab_values.py -h`.
+
+### Plot Voronoi diagram for one magnitude bin ###
+
+### Plot a map of earthquake count/density for one magnitude bin ###
+
+### Plot a map of _a_-values ###
+
+### Plot FMDs for a collection of pixels ###
+
+
+
 ## File formats ##
 
 ### Input files ###
