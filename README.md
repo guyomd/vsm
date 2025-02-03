@@ -100,9 +100,10 @@ Tutorials and examples will be included to assist interested users with our inpu
   Bounds can be specified in two forms:
     - rectangular area, or
     - any area enclosed in a specified polygon
-  Each line starting with "#" is considered as a comment and skipped.
+
+   Each line starting with "#" is considered as a comment and skipped.
   
-  <ins>Example format for a rectangular area</ins>: \
+  <ins>Example format for a rectangular area</ins>: 
   It is defined by its 4 corners, with columns arranged in `[LON] [LAT]` order. 
   ```
   # VSM TARGET GEOGRAPHICAL AREA
@@ -158,24 +159,23 @@ Tutorials and examples will be included to assist interested users with our inpu
   1665.093151	-0.05	43.1	5.4	100.0	100.0	0.0	0.43
   1672.945355	7.75	47.483	5.6	50.0	50.0	0.0	0.45
   1678.668493	5.783	43.75	5.0	100.0	100.0	0.0	0.4
-  1682.358904	6.517	47.967	6.3	20.0	20.0	0.0	0.37
-  1704.191257	0.75	46.95	5.3	100.0	100.0	0.0	0.51
-  1706.682192	0.4	47.317	4.9	50.0	50.0	0.0	0.45
-  1708.196721	0.017	47.05	5.3	100.0	100.0	0.0	0.38
-  1711.761644	0.05	46.933	5.7	10.0	10.0	0.0	0.37
-  1728.587432	7.917	48.35	6.0	10.0	10.0	0.0	0.33
-  1736.445355	7.333	47.383	4.5	100.0	100.0	0.0	0.53
-  1737.375342	8.3	48.917	5.3	50.0	50.0	0.0	0.5
-  1743.178082	-0.75	43.25	5.6	100.0	100.0	0.0	0.66
-  1749.775342	0.75	46.567	4.9	50.0	50.0	0.0	0.34
-  1750.391781	-0.033	43.067	6.1	10.0	10.0	0.0	0.38
-  1752.125683	7.733	43.8	4.5	100.0	100.0	0.0	0.52
-  1755.098630	-2.183	48.2	4.5	100.0	100.0	0.0	0.44
-  1755.986301	6.311	50.861	5.09	12.3	9.6	0.0	0.37
-  1756.090164	-0.633	46.033	4.7	25.0	25.0	0.0	0.44
   ```
    
-* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`):
+* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of Frequency-Magnitude Distributions for each pixel of the grid output by the program `voronoi_smoothing.py`.
+One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
+Columns order: [CENTRAL LON] [CENTRAL LAT] [MMIN] [MMAX] [COMPLETENESS DURATION BIN 1] [COMPLETENESS DURATION BIN 2] ... [COMPLETENESS DURATION BIN N]
+ 
+  ```
+  # VSM FMD INFORMATION FILE
+  # Line format: lon; lat; mmin; mmax; dur_1; dur_2; dur_3; dur_4; dur_5; dur_6; dur_7
+  -4.95; 43.85; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
+  -4.95; 43.95; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
+  -4.95; 44.05; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
+  -4.95; 44.15; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
+  -4.95; 44.25; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
+  ```
+
+
 * **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`):
 
 ### Output files ###
