@@ -289,7 +289,7 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
     if isinstance(fmd_file, str):
         print(f'>> Read limits (and optionally, durations) of freq.-mag. '
               + f'distributions in "{fmd_file}"')
-        gridinfo = np.loadtxt(fmd_file, delimiter=';')
+        gridinfo = np.loadtxt(fmd_file, delimiter=';', comments='#')
         # Check GRIDINFO Format:
         # gridinfo[i,:] = [lon, lat, mmin, mmax, dur_i, dur_i+1, ..., dur_N]
         loaded_params = ''
