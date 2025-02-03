@@ -145,9 +145,9 @@ Tutorials and examples will be included to assist interested users with our inpu
   - <ins>with uncertainties</ins>, columns are arranged in the following order: `[FLOATING DATE] [LON] [LAT] [MAG] [HALF-LENGTH OF SEMI-MAJOR AXIS IN KM] [HALF-LENGTH OF SEMI-MINOR AXIS IN KM] [AZIMUTH OF SEMI-MAJOR AXIS in DEG] [MAG UNCERTAINTY]`
   ```
   # VSM EARTHQUAKE EPICENTERS 
-  # 1 event per line
-  # Coordinates expressed in geographical coordinates (EPSG:4326)	
-  # Line format: Floating_Date  Longitude  Latitude  Magnitude  Loc_Unc_SMAJ  Loc_Unc_SMIN  Loc_Unc_Az  Mag_Unc
+  # 1 EVENT PER LINE
+  # COORDINATES EXPRESSED IN GEOGRAPHICAL COORDINATES (EPSG:4326)	
+  # LINE FORMAT: Floating_Date  Longitude  Latitude  Magnitude  Loc_Unc_SMAJ  Loc_Unc_SMIN  Loc_Unc_Az  Mag_Unc
   1522.479452	0.75	46.917	5.8	100.0	100.0	0.0	0.43
   1579.068493	2.0	46.583	6.0	50.0	50.0	0.0	0.47
   1580.262295	1.5	51.0	5.8	50.0	50.0	0.0	0.49
@@ -161,22 +161,48 @@ Tutorials and examples will be included to assist interested users with our inpu
   1678.668493	5.783	43.75	5.0	100.0	100.0	0.0	0.4
   ```
    
-* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of Frequency-Magnitude Distributions for each pixel of the grid output by the program `voronoi_smoothing.py`.
+* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of frequency-magnitude distributions (FMD) for each pixel of the grid output by the program `voronoi_smoothing.py`. When completeness durations are specified in this file, they replace durations provided in the Magnitude Bin Configuration file, see above.
 One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
-Columns order: [CENTRAL LON] [CENTRAL LAT] [MMIN] [MMAX] [COMPLETENESS DURATION BIN 1] [COMPLETENESS DURATION BIN 2] ... [COMPLETENESS DURATION BIN N]
+Columns order: [CENTRAL LON] [CENTRAL LAT] [MMIN] [MMAX] [COMPLETENESS DURATION BIN 1] [COMPLETENESS DURATION BIN 2] ... [COMPLETENESS DURATION BIN N]\
+The first 3 columns are mandatory, others are optional. 
  
   ```
   # VSM FMD INFORMATION FILE
-  # Line format: lon; lat; mmin; mmax; dur_1; dur_2; dur_3; dur_4; dur_5; dur_6; dur_7
+  # LINE FORMAT: lon; lat; mmin; mmax; dur_1; dur_2; dur_3; dur_4; dur_5; dur_6; dur_7
   -4.95; 43.85; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
   -4.95; 43.95; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
   -4.95; 44.05; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
   -4.95; 44.15; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
   -4.95; 44.25; 3.0; 6.5; 55.0; 60.0; 70.0; 220.0; 220.0; 220.0; 220.0
   ```
+  Special values:
+  - `mmax = -9.0`: Use an untruncated Gutenberg-Richter relationship for the pixel (_i.e.,_ equivalent to `mmax = inf`)
+  - `mmax = NaN`: Use an untruncated Gutenberg-Richter relationship for the pixel (_i.e.,_ equivalent to `mmax = inf`)
+  - missing `mmax`: Use an untruncated Gutenberg-Richter relationship for the pixel (_i.e.,_ equivalent to `mmax = inf`)
 
 
-* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`):
+* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`): Provides optional constraints on _b_-values for each pixel in the grid output by the program `voronoi_smoothing.py`. These constraints are expressed in terms of an _a-priori_ <ins>normal</ins> distribution on _b_-values, parameterized by its <ins>mean</ins> and its <ins>standard-deviation</ins>. The estimation of (_a_, _b_) parameters for all pixels is realized by execution of the program `compute_ab_values.py`, which loads this _a-priori_ information only if the filename is listed in the configuration file. One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
+  Columns order: [CENTRAL LON] [CENTRAL LAT] [B_MEAN] [B_STD_DEV]
+  ```
+  # B-PRIOR INFORMATION FILE
+  # LINE FORMAT: lon; lat; b_mean; b_std
+  -4.95; 47.75; 1.01; 0.1
+  -4.95; 47.85; 1.01; 0.1
+  -4.95; 47.95; 1.01; 0.1
+  -4.95; 48.05; 0.96; 0.1
+  -4.95; 48.15; 0.96; 0.1
+  -4.95; 48.25; 0.96; 0.1
+  -4.95; 48.35; 0.96; 0.1
+  -4.95; 48.45; 0.96; 0.1
+  -4.95; 48.55; 0.96; 0.1
+  -4.95; 48.65; 0.96; 0.1
+  -4.95; 48.75; 0.96; 0.1
+  ```
+  Special values:
+   - `b_mean = 0.0` <ins>and</ins> `b_std = 0.0`: Flags indicating the absence of _a-priori_ distribution for the pixel
+   - `b_mean = -9.0` <ins>and</ins> `b_std = -9.0`: Flags indicating the absence of _a-priori_ distribution for the pixel
+
+
 
 ### Output files ###
 
