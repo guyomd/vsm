@@ -158,7 +158,7 @@ class TruncatedGRestimator():
         if filename:
             self.file_prior_b = filename
             print(f'>> Prior information on b-values read from "{filename}"')
-            priorinfo = np.loadtxt(filename, delimiter=';')
+            priorinfo = np.loadtxt(filename, delimiter=';', comments='#')
             for i in range(self.ncells):
                 j = np.where((np.abs(priorinfo[:, 0] - self.densities[i, 0]) < COORD_PRECISION) & \
                              (np.abs(priorinfo[:, 1] - self.densities[i, 1]) < COORD_PRECISION) )[0]
