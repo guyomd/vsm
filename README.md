@@ -4,6 +4,8 @@ Computer-programs for the construction of seismicity models and maps based on Vo
 >[!WARNING]
 >:warning: ***Documentation under-construction...***
 
+![Image with 3 panels, showing from top to bottom, a Voronoi diagram made from epicentral locations, and the associated gridded seismicity models without (in the middle) and with (in the bottom) accounting for location and magnitude uncertainties](examples/Figure_VSM.png)
+
 > [!NOTE]
 > For citation and a detailed presentation of the method, see:\
 > **Daniel, G., and Arroucau, P., 2025, Data-driven seismicity models based on Voronoi diagrams, _in preparation_**
