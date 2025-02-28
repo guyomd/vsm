@@ -24,7 +24,7 @@ This package consists in two main modules added of a suite of utilities for plot
 * <ins>Testing utilities</ins>:
   * **`gof_tests.py`** : ***[ Under development ].*** Goodness-of-fit tests based on residual analysis.
 
-## Examples / Use-cases##
+## Examples / Use-cases ##
 Tutorials and examples will be included to assist interested users with our input formats, and with the use of the programs.
 
 
