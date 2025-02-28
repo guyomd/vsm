@@ -4,7 +4,7 @@ Computer-programs for the construction of seismicity models and maps based on Vo
 >[!WARNING]
 >:warning: ***Documentation under-construction...***
 
-<img src="examples/Figure_VSM.png" width="200" />
+<img src="examples/Figure_VSM.png" width="300" class="center" />
 
 > [!NOTE]
 > For citation and a detailed presentation of the method, see:\
