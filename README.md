@@ -210,21 +210,31 @@ The first 3 columns are mandatory, others are optional.
 
 ### Output files ###
 * **Produced by voronoi2density.py**
-  * **Earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the number of earthquake counts with magnitudes included in bin _i_. Each pixel is described by its 4 vertices.
+  * **Earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the number of earthquake counts with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Z-values correspond to the estimated earthquake count within each pixel.
 
-  * **Earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Density is obtained by dividing earthquake counts by pixel area.
- 
   * **gridded_counts.txt**
+    
+  * **Earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Density is obtained by dividing earthquake counts by pixel area. Z-values correspond to the spatial density of earthquake within each pixel.
  
   * **gridded_densities.txt**
+ 
+  * **Voronoi polygons (for each magnitude bin):** (_e.g.,_ `polygons_bin_i.txt`): GMT-formatted ASCII polygon file listing all Voronoi polygons of the diagram obtained from epicentral locations of earthquakes with magnitudes included in bin _i_. Z-values correspond to the spatial density of earthquake within each polygon. This file is only produced when the random sampling of catalogue uncertainties is deactivated (_i.e.,_, option `nb_bootstrap_samples` set to 0). When uncertainties are propagated, a similar output can be produced for each random realisation by activating option `save_bootstrap_realizations: True` in the [**Configuration file**](#Input-files).
 
-  * **Standard-deviation of earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_std_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the standard-deviation of earthquake counts for events with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. These files are only created when uncertainties are propagated by random sampling of catalogue uncertainties (_i.e.,_, when option `nb_bootstrap_samples` set to a number greater than 0).
+  * **Standard-deviation of earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_std_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the standard-deviation of earthquake counts for events with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. These files are only created when uncertainties are propagated by random sampling of catalogue uncertainties (_i.e.,_, when option `nb_bootstrap_samples` set to a number greater than 0).
 
-* **Standard-deviation of earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_std_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the standard-deviation of the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. These files are only created when uncertainties are propagated by random sampling of catalogue uncertainties (_i.e.,_, when option `nb_bootstrap_samples` set to a number greater than 0)..
+  * **Standard-deviation of earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_std_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the standard-deviation of the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. These files are only created when uncertainties are propagated by random sampling of catalogue uncertainties (_i.e.,_, when option `nb_bootstrap_samples` set to a number greater than 0).
 
   * **gridded_counts_std.txt**
  
   * **gridded_densities_std.txt**
+ 
+  * **bootstrap/catalog_bin_i_bs_j.txt**
+ 
+  * **bootstrap/counts_bin_i_bs_j.txt**
+ 
+  * **bootstrap/density_bin_i_bs_j.txt**
+ 
+  * **bootstrap/polygons_bin_i_bs_j.txt**
 
 
 > [!CAUTION]
