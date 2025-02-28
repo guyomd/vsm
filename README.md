@@ -14,24 +14,24 @@ Computer-programs for the construction of seismicity models and maps based on Vo
 
 ## Package contents ##
 This package consists in two main modules added of a suite of utilities for plotting or validation purposes:\
-* **`voronoi_smoothing.py`**: Calculation of earthquake count/density grids based on Voronoi diagrams of a set of epicentral locations. This program can also propagate earthquake location and magnitude uncertainties using a random Monte-Carlo sampling process. This tends to produce a data-driven smoothing of spatial seismicity patterns. One count/density grid is constructed for each magnitude bin and is then projected onto a regular spatial mesh.
+* **`voronoi2density.py`**: Calculation of earthquake count/density grids based on Voronoi diagrams of a set of epicentral locations. This program can also propagate earthquake location and magnitude uncertainties using a random Monte-Carlo sampling process. This tends to produce a data-driven smoothing of spatial seismicity patterns. One count/density grid is constructed for each magnitude bin and is then projected onto a regular spatial mesh.
 * **`compute_ab_values.py`**: Modelling of Frequency-Magnitude Distributions (FMD). This program uses a collection of count/density grids over several magnitude bins to reconstruct a FMD for each pixel of the regular spatial mesh. The program also estimates and returns a grid of parameters _a_ and _b_ from the Gutenberg & Richter law[^1] in each pixel.
 * <ins>Plotting utilities</ins>:
   * **`plot_fmd.py`**: Plot the Frequency-Magnitude Distribution for one, or several, pixels
   * **`plot_map.py`**: Plot a map of earthquake counts/densities or _a_/_b_-values of the Gutenberg & Richter relationship
-  * **`plot_distrib.py`**: Plot for one pixel of the regular grid the distribution of any quantity stored in GMT-formatted multiple segment files (_i.e.,_ counts, densities, _a_ or _b_). This can be useful to inspect the distributions produced by the propagation of uncertainties using `voronoi_smoothing.py`.  
+  * **`plot_distrib.py`**: Plot for one pixel of the regular grid the distribution of any quantity stored in GMT-formatted multiple segment files (_i.e.,_ counts, densities, _a_ or _b_). This can be useful to inspect the distributions produced by the propagation of uncertainties using `voronoi2density.py`.  
     
 * <ins>Testing utilities</ins>:
   * **`gof_tests.py`** : ***[ Under development ].*** Goodness-of-fit tests based on residual analysis.
 
-## Examples ##
+## Examples / Use-cases##
 Tutorials and examples will be included to assist interested users with our input formats, and with the use of the programs.
 
 
 ### Calculation of earthquake counts/density per magnitude bin ###
-<ins>*Syntax*</ins>: `python voronoi_smoothing.py parameters.txt`
+<ins>*Syntax*</ins>: `python voronoi2density.py parameters.txt`
 > [!NOTE]
-> A full list of available options can be obtained using the `-h` flag, _i.e.,_ `python voronoi_smoothing.py -h`.
+> A full list of available options can be obtained using the `-h` flag, _i.e.,_ `python voronoi2density.py -h`.
 
 ### Estimation of (_a_, _b_) parameters of the Gutenberg & Richter law[^1] ###
 <ins>*Syntax*</ins>: `python compute_ab_values.py parameters.txt`
@@ -165,7 +165,7 @@ Tutorials and examples will be included to assist interested users with our inpu
   1678.668493	5.783	43.75	5.0	100.0	100.0	0.0	0.4
   ```
    
-* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of frequency-magnitude distributions (FMD) for each pixel of the grid output by the program `voronoi_smoothing.py`. When completeness durations are specified in this file, they replace durations provided in the Magnitude Bin Configuration file, see above.
+* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of frequency-magnitude distributions (FMD) for each pixel of the grid output by the program `voronoi2density.py`. When completeness durations are specified in this file, they replace durations provided in the Magnitude Bin Configuration file, see above.
 One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
 Columns order: [CENTRAL LON] [CENTRAL LAT] [MMIN] [MMAX] [COMPLETENESS DURATION BIN 1] [COMPLETENESS DURATION BIN 2] ... [COMPLETENESS DURATION BIN N]\
 The first 3 columns are mandatory, others are optional. 
@@ -185,7 +185,7 @@ The first 3 columns are mandatory, others are optional.
   - missing `mmax`: Use an untruncated Gutenberg-Richter relationship for the pixel (_i.e.,_ equivalent to `mmax = inf`)
 
 
-* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`): Provides optional constraints on _b_-values for each pixel in the grid output by the program `voronoi_smoothing.py`. These constraints are expressed in terms of an _a-priori_ <ins>normal</ins> distribution on _b_-values, parameterized by its <ins>mean</ins> and its <ins>standard-deviation</ins>. The estimation of (_a_, _b_) parameters for all pixels is realized by execution of the program `compute_ab_values.py`, which loads this _a-priori_ information only if the filename is listed in the configuration file. One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
+* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`): Provides optional constraints on _b_-values for each pixel in the grid output by the program `voronoi2density.py`. These constraints are expressed in terms of an _a-priori_ <ins>normal</ins> distribution on _b_-values, parameterized by its <ins>mean</ins> and its <ins>standard-deviation</ins>. The estimation of (_a_, _b_) parameters for all pixels is realized by execution of the program `compute_ab_values.py`, which loads this _a-priori_ information only if the filename is listed in the configuration file. One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
   Columns order: [CENTRAL LON] [CENTRAL LAT] [B_MEAN] [B_STD_DEV]
   ```
   # B-PRIOR INFORMATION FILE
@@ -209,22 +209,22 @@ The first 3 columns are mandatory, others are optional.
 
 
 ### Output files ###
+* **Produced by voronoi2density.py**
+  * **Earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the number of earthquake counts with magnitudes included in bin _i_. Each pixel is described by its 4 vertices.
 
+  * **Earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Density is obtained by dividing earthquake counts by pixel area.
+ 
+  * **gridded_counts.txt**
+ 
+  * **gridded_densities.txt**
 
+  * **Standard-deviation of earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_std_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the standard-deviation of earthquake counts for events with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. These files are only created when uncertainties are propagated by random sampling of catalogue uncertainties (_i.e.,_, when option `nb_bootstrap_samples` set to a number greater than 0).
 
+* **Standard-deviation of earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_std_bin_i_suffix.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the standard-deviation of the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. These files are only created when uncertainties are propagated by random sampling of catalogue uncertainties (_i.e.,_, when option `nb_bootstrap_samples` set to a number greater than 0)..
 
-
-
-
-
-
- * 
- ![](/path/to/image.png)
-
-*
-
-
-
+  * **gridded_counts_std.txt**
+ 
+  * **gridded_densities_std.txt**
 
 
 > [!CAUTION]
