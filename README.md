@@ -252,7 +252,7 @@ Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise esti
         * **Voronoi polygons (for each magnitude bin) for each realization** (_e.g.,_ `bootstrap/polygons_bin_i_bs_j.txt`): GMT-formatted ASCII polygon file listing all Voronoi polygons obtained from epicentral locations of earthquakes in the random catalogue with magnitudes included in bin _i_ for realization _j_. Same format than file `polygons_bin_i.txt`.
 
 
-#### Produced by compate_ab_values.py ####
+#### Produced by compute_ab_values.py ####
 
 
 #### Produced by make_plots.py ####
