@@ -11,7 +11,7 @@ from lib.ioutils import (ParameterSet,
                          change_zvalue_in_polygon_file,
                          load_grid,
                          load_fmd_file)
-from lib.grt_ml import Dutfoy2020_LogLikelihood
+from lib.grt_ml import Dutfoy2020_Estimator
 from lib.grt_pl import penalized_likelihood, load_mcmc_results
 
 COORD_PRECISION = 1E-6  # Precision used for the comparison of cell coordinates
@@ -212,7 +212,7 @@ class TruncatedGRestimator():
                 imc = np.where(self.bins['mids'] - dm / 2 >= mmin)[0][0]
                 mc = mmin
 
-            ll = Dutfoy2020_LogLikelihood(cell_mmid[imc:],
+            ll = Dutfoy2020_Estimator(cell_mmid[imc:],
                                           cell_durations[imc:],
                                           cell_intensities[imc:],
                                           mc,

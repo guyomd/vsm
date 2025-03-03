@@ -33,7 +33,7 @@ def cumulative_fmd(mags, a, b, dm, m0=0.0, mmax=np.inf):
     return  l0 * (1 - cdf)
 
 
-class Dutfoy2020_LogLikelihood():
+class Dutfoy2020_Estimator():
 
     def __init__(self, central_mags: np.ndarray, durations: np.ndarray, counts: np.ndarray, m0, mmax, dm):
         """Class for the computation of the truncated Gutenberg-Richter model log-likelihood.
@@ -79,8 +79,8 @@ class Dutfoy2020_LogLikelihood():
         mu = mubeta[:, 0]
         beta = mubeta[:, 1]
         b = beta / np.log(10)
-        k0 = np.power(10, -b * self.m0)
-        kmax = np.power(10, -b * self.mmax)
+        k0 = np.exp(-beta * self.m0)
+        kmax = np.exp(-beta * self.mmax)
         a = np.log10(mu) - np.log10((k0 - kmax) / (1 - kmax))
         return a, b
 
@@ -100,7 +100,7 @@ class Dutfoy2020_LogLikelihood():
         n = len(beta)
         beta = np.tile(beta.reshape((n, 1)), (1, self.nb))
         Di = np.tile(self.durs, (n, 1))
-        ci = np.tile(self.mags, (n, 1))
+        ci = np.tile(self.mags, (n, 1)) - self.m0
         ni = np.tile(self.cnts, (n, 1))
         T0 = np.sum(Di * np.exp(-beta * ci), axis=1)
         T1 = np.sum(ci * Di * np.exp(-beta * ci), axis=1)
@@ -113,6 +113,9 @@ class Dutfoy2020_LogLikelihood():
     def LL(self, ab: np.ndarray):
         """
         see eqn (12)
+
+        !! Important !!
+        Note that in this function parameter "a" must correspond to log10(nb. events with mag >= m0)
         """
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
@@ -122,6 +125,10 @@ class Dutfoy2020_LogLikelihood():
     def LL_with_prior(self, ab: np.ndarray, prior_fun):
         """
         see eqn (12), added of the log of a prior probability on b.
+
+        !! Important !!
+        Note that in this function parameter "a" must correspond to log10(nb. events with mag >= m0)
+
         NB: PRIOR_FUN must be a callable returning log(pdf(b)) and must be
         parameterized as a function of b, not beta !
         """
@@ -135,6 +142,10 @@ class Dutfoy2020_LogLikelihood():
         """
         see eqn (12), added of the log of normal prior probability on b,
         with mean MEAN_B and standard deviation STD_B.
+
+        !! Important !!
+        Note that in this function parameter "a" must correspond to log10(nb. events with mag >= m0)
+
         """
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
@@ -166,6 +177,23 @@ class Dutfoy2020_LogLikelihood():
         T0 = self.TiUi(beta_opt)[0]
         return (self.N * self.alpha(beta_opt)) / (2 * np.sinh(beta_opt * self.delta) * T0)
 
+    def _unbias_b_value(self, b, N):
+        """
+        Remove the bias in b-value estimate obtained with the maximum likelihood estimator
+        when the number of observations is small (see Ogata and Yamashina, J. Phys. Earth, 1986)
+
+        :param b: float, maximum-likelihood b-value estimate
+        :param N: float, number of earthquakes observed in the FMD
+        :returns float, unbiased b-value estimate
+        """
+        return b * (N - 1) / N
+
+    def _unbias_beta_value(self, beta, N):
+        """
+        Apply Ogata & Yamashina (1986) formula to correct the bias in beta values
+        """
+        return self._unbias_b_value(beta, N)
+
     def find_optimal_ab_no_prior(self):
         """
         Search for optimal (a,b) parameters, see eqns (17) and (18)
@@ -175,10 +203,13 @@ class Dutfoy2020_LogLikelihood():
                               method='bounded',
                               bounds=[0.5 * np.log(10), 3.0 * np.log(10)]
                               )
-        beta = res.x
+        N = np.sum(self.cnts * self.durs)
+        beta = self._unbias_beta_value(res.x, N)
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
+        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
+        a += b * self.m0
         return a, b, rho, cov
 
     def find_optimal_ab_no_prior_b_truncated(self, bounds_b):
@@ -193,10 +224,13 @@ class Dutfoy2020_LogLikelihood():
                               method='bounded',
                               bounds=[bounds_b[0] * np.log(10), bounds_b[1] * np.log(10)]
                               )
-        beta = res.x
+        N = np.sum(self.cnts * self.durs)
+        beta = self._unbias_beta_value(res.x, N)
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
+        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
+        a += b * self.m0
         return a, b, rho, cov
 
     def find_optimal_ab_with_normal_prior(self, mean_b, std_b):
@@ -213,10 +247,13 @@ class Dutfoy2020_LogLikelihood():
                               bounds=[0.5 * np.log(10), 3.0 * np.log(10)],
                               args=prior_args
                               )
-        beta = res.x
+        N = np.sum(self.cnts * self.durs)
+        beta = self._unbias_beta_value(res.x, N)
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
+        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
+        a += b * self.m0
         return a, b, rho, cov
 
     def find_optimal_ab_with_truncated_normal_prior(self, mean_b, std_b, bounds_b):
@@ -236,10 +273,13 @@ class Dutfoy2020_LogLikelihood():
                               bounds=[bounds_b[0] * np.log(10), bounds_b[1] * np.log(10)],
                               args=prior_args
                               )
-        beta = res.x
+        N = np.sum(self.cnts * self.durs)
+        beta = self._unbias_beta_value(res.x, N)
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
+        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
+        a += b * self.m0
         return a, b, rho, cov
 
     def _fisher_information_matrix(self, mubeta: np.ndarray, std_beta=np.inf):
