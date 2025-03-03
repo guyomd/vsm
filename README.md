@@ -27,6 +27,15 @@ This package consists in two main modules added of a suite of utilities for plot
 * <ins>Testing utilities</ins>:
   * **`gof_tests.py`** : ***[ Under development ].*** Goodness-of-fit tests based on residual analysis.
 
+## Schematic workflow ##
+**TODO:** Add sketches for the three module `voronoi2density.py`, `compute_ab_values.py` and `make_plots.py` showing:\
+* Input required by each module
+* Optional inputs
+* Key role of the module
+* Outputs produced by the module
+* Optional outputs requested on-demand by the user
+
+
 ## Examples / Use-cases ##
 Tutorials and examples will be included to assist interested users with our input formats, and with the use of the programs.
 
