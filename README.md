@@ -12,6 +12,9 @@ Computer-programs for the construction of seismicity models and maps based on Vo
 > For citation and a detailed presentation of the method, see:\
 > **Daniel, G., and Arroucau, P., 2025, Data-driven seismicity models based on Voronoi diagrams, _in preparation_**
 
+> [!CAUTION]
+> Use this program at your own risks! We cannot guarantee the exacteness and the reliability of any program included in this repository.
+
 ## Package contents ##
 This package consists in two main modules added of a suite of utilities for plotting or validation purposes:\
 * **`voronoi2density.py`**: Calculation of earthquake count/density grids based on Voronoi diagrams of a set of epicentral locations. This program can also propagate earthquake location and magnitude uncertainties using a random Monte-Carlo sampling process. This tends to produce a data-driven smoothing of spatial seismicity patterns. One count/density grid is constructed for each magnitude bin and is then projected onto a regular spatial mesh.
@@ -212,7 +215,8 @@ The first 3 columns are mandatory, others are optional.
 * **Produced by voronoi2density.py**
   * **Earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the number of earthquake counts with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Z-values correspond to the estimated earthquake count within each pixel.
 
-  * **gridded_counts.txt**
+  * **Summary table of earthquake counts (for all bins and all pixels)** (_e.g.,_ `gridded_counts.txt`): CSV-formatted (semi-colon delimited) table of earthquake count values. One pixel per line. Number of columns is equal to the number of magnitude bins + 2.\
+    Columns order: [CENTRAL LON] [CENTRAL LAT] [COUNTS IN BIN 1] [COUNTS IN BIN 2] ... [COUNTS IN BIN i]
     
   * **Earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Density is obtained by dividing earthquake counts by pixel area. Z-values correspond to the spatial density of earthquake within each pixel.
  
@@ -236,9 +240,6 @@ The first 3 columns are mandatory, others are optional.
  
   * **bootstrap/polygons_bin_i_bs_j.txt**
 
-
-> [!CAUTION]
-> Use this program at your own risks! We cannot guarantee the exacteness and the reliability of any program included in this repository.
 
 [^1]: Gutenberg, B., and Richter, C. F., 1944, Frequency of Earthquakes in California, _Bulletin of the Seismological Society of America_, 34, 4, pp.185-188.
 [^2]: Field, E. H., 2007, Overview of the Working Group for the Development of Regional Earthquake Likelihood Models (RELM), Seismological Research Letters, 78, 1, pp.7-16
