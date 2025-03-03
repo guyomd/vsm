@@ -215,7 +215,7 @@ The first 3 columns are mandatory, others are optional.
 * **Produced by voronoi2density.py**
   * **Earthquake counts per pixel (for each magnitude bin)** (_e.g.,_ `counts_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the number of earthquake counts with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Z-values correspond to the estimated earthquake count within each pixel.
 
-  * **Summary table of earthquake counts (for all bins and all pixels)** (_e.g.,_ `gridded_counts.txt`): CSV-formatted (semi-colon delimited) table of earthquake count values. One pixel per line. Number of columns is equal to the number of magnitude bins + 2.\
+  * **Summary table of earthquake counts (for all bins and all pixels)** (_e.g.,_ `gridded_counts.txt`): CSV-formatted (delimited by semi-colons, i.e. ";") table of earthquake count values. One pixel per line. Number of columns is equal to the number of magnitude bins + 2.\
     Columns order: [CENTRAL LON] [CENTRAL LAT] [COUNTS IN BIN 1] [COUNTS IN BIN 2] ... [COUNTS IN BIN i]
     
   * **Earthquake density per pixel (for each magnitude bin)** (_e.g.,_ `density_bin_i.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the spatial density of earthquakes with magnitudes included in bin _i_. Each pixel is described by its 4 vertices. Density is obtained by dividing earthquake counts by pixel area. Z-values correspond to the spatial density of earthquake within each pixel.
