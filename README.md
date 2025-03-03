@@ -223,7 +223,7 @@ Columns order: [CENTRAL LON] [CENTRAL LAT] [COUNTS IN BIN 1] [COUNTS IN BIN 2] .
 * **Summary table of earthquake densities (for all bins and all pixels)** (_e.g.,_ `gridded_densities.txt`): Table of earthquake densities for every bin and for every pixel in the target area, in CSV formatted, delimited by semi-colons (";"). One pixel per line. Number of columns is equal to the number of magnitude bins + 2.\
 Columns order: [CENTRAL LON] [CENTRAL LAT] [DENSITY IN BIN 1] [DENSITY IN BIN 2] ... [DENSITY IN BIN i]
 
-* **Voronoi polygons (for each magnitude bin):** (_e.g.,_ `polygons_bin_i.txt`): GMT-formatted ASCII polygon file listing all Voronoi polygons of the diagram obtained from epicentral locations of earthquakes with magnitudes included in bin _i_. Z-values correspond to the spatial density of earthquake within each polygon. This file is only produced when the random sampling of catalogue uncertainties is deactivated (_i.e._, option `nb_bootstrap_samples` set to 0). When uncertainties are propagated, a similar output can be produced for each random realisation by activating option `save_bootstrap_realizations: True` in the [**Configuration file**](#Input-files).
+* **Voronoi polygons (for each magnitude bin)** (_e.g.,_ `polygons_bin_i.txt`): GMT-formatted ASCII polygon file listing all Voronoi polygons of the diagram obtained from epicentral locations of earthquakes with magnitudes included in bin _i_. Z-values correspond to the spatial density of earthquake within each polygon. This file is only produced when the random sampling of catalogue uncertainties is deactivated (_i.e._, option `nb_bootstrap_samples` set to 0). When uncertainties are propagated, a similar output can be produced for each random realisation by activating option `save_bootstrap_realizations: True` in the [**Configuration file**](#Input-files).
 
 * **<ins>Supplementary outputs</ins> when uncertainties are propagated using Monte-Carlo random sampling**:
   The following files report standard deviations of earthquake count and density estimates when the option `nb_bootstrap_samples: ` is set with any number greater than 0 in the [**Configuration file**](#Input-files).
@@ -245,11 +245,11 @@ Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise esti
         * **Random catalogue realization** (_e.g.,_ `bootstrap/catalog_bin_i_bs_j.txt`): Random realization of the earthquake catalogue for bin _i_ and for realization index _j_. This data is stored using a semi-colon (";")-delimited ASCII format with 4 columns.\
           Columns order: [TIME] [LONGITUDE] [LATITUDE] [MAGNITUDE]
         
-        * **bootstrap/counts_bin_i_bs_j.txt**
+        * **Earthquake counts per pixel (for each magnitude bin) for each realization** (_e.g.,_ `bootstrap/counts_bin_i_bs_j.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the number of earthquake counts with magnitudes included in bin _i_ for realization index _j_. Same format than file `counts_bin_i.txt`.
         
-        * **bootstrap/density_bin_i_bs_j.txt**
+        * **Earthquake density per pixel (for each magnitude bin) for each realization** (_e.g.,_ `bootstrap/density_bin_i_bs_j.txt`): GMT-formatted ASCII polygon file listing, for each pixel, the spatial density of earthquakes with magnitudes included in bin _i_ for realization index _j_. Same format than file `density_bin_i_bs_j.txt`.
         
-        * **bootstrap/polygons_bin_i_bs_j.txt**
+        * **Voronoi polygons (for each magnitude bin) for each realization** (_e.g.,_ `bootstrap/polygons_bin_i_bs_j.txt`): GMT-formatted ASCII polygon file listing all Voronoi polygons obtained from epicentral locations of earthquakes in the random catalogue with magnitudes included in bin _i_ for realization _j_. Same format than file `polygons_bin_i.txt`.
 
 
 [^1]: Gutenberg, B., and Richter, C. F., 1944, Frequency of Earthquakes in California, _Bulletin of the Seismological Society of America_, 34, 4, pp.185-188.
