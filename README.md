@@ -252,5 +252,11 @@ Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise esti
         * **Voronoi polygons (for each magnitude bin) for each realization** (_e.g.,_ `bootstrap/polygons_bin_i_bs_j.txt`): GMT-formatted ASCII polygon file listing all Voronoi polygons obtained from epicentral locations of earthquakes in the random catalogue with magnitudes included in bin _i_ for realization _j_. Same format than file `polygons_bin_i.txt`.
 
 
+#### Produced by compate_ab_values.py ####
+
+
+#### Produced by make_plots.py ####
+
+
 [^1]: Gutenberg, B., and Richter, C. F., 1944, Frequency of Earthquakes in California, _Bulletin of the Seismological Society of America_, 34, 4, pp.185-188.
 [^2]: Field, E. H., 2007, Overview of the Working Group for the Development of Regional Earthquake Likelihood Models (RELM), Seismological Research Letters, 78, 1, pp.7-16
