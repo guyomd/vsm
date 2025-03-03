@@ -239,9 +239,11 @@ Columns order: [CENTRAL LON] [CENTRAL LAT] [DENSITY IN BIN 1] [DENSITY IN BIN 2]
     * **<ins>Optional outputs</ins> for each realization of the Monte-Carlo random sampling process**:
 The next files store intermediary results produced during the Monte-Carlo random sampling process for the propagation of uncertainties.\
 For each realization, a new catalogue is built from the original catalogue, where earthquake locations (and optionally, magnitudes) are randomly drawn within the uncertainty domain specified in the original catalogue. Then, the process produces a Voronoi diagram based on this new catalogue, and it estimates earthquake counts and densities over the target gridded area from this diagram.
-The last step consists in averaging counts and densities over all realizations, and in storing final results in files `gridded_counts.txt` and `gridded_densities.txt`.
+The last step consists in averaging counts and densities over all realizations, and in storing final results in files `gridded_counts.txt` and `gridded_densities.txt`.\
+Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise estimates of earthquake counts and densities) can be activated by setting option `save_bootstrap_realizations: True`. By default, this option is deactivated (set to `False`).
 
-        * **bootstrap/catalog_bin_i_bs_j.txt**
+        * **Random catalogue realization** (_e.g.,_ `bootstrap/catalog_bin_i_bs_j.txt`): Random realization of the earthquake catalogue for bin _i_ and for realization index _j_. This data is stored using a semi-colon (";")-delimited ASCII format with 4 columns.\
+          Columns order: [TIME] [LONGITUDE] [LATITUDE] [MAGNITUDE]
         
         * **bootstrap/counts_bin_i_bs_j.txt**
         
