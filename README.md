@@ -168,7 +168,7 @@ Tutorials and examples will be included to assist interested users with our inpu
   1678.668493	5.783	43.75	5.0	100.0	100.0	0.0	0.4
   ```
    
-* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of frequency-magnitude distributions (FMD) for each pixel of the grid output by the program `voronoi2density.py`. When completeness durations are specified in this file, they replace durations provided in the Magnitude Bin Configuration file, see above.
+* **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of frequency-magnitude distributions (FMD) for each pixel defined in the grid output by the program `voronoi2density.py`. When completeness durations are specified in this file, they replace durations provided in the Magnitude Bin Configuration file, see above.
 One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
 Columns order: [CENTRAL LON] [CENTRAL LAT] [MMIN] [MMAX] [COMPLETENESS DURATION BIN 1] [COMPLETENESS DURATION BIN 2] ... [COMPLETENESS DURATION BIN N]\
 The first 3 columns are mandatory, others are optional. 
@@ -188,7 +188,7 @@ The first 3 columns are mandatory, others are optional.
   - missing `mmax`: Use an untruncated Gutenberg-Richter relationship for the pixel (_i.e.,_ equivalent to `mmax = inf`)
 
 
-* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`): Provides optional constraints on _b_-values for each pixel in the grid output by the program `voronoi2density.py`. These constraints are expressed in terms of an _a-priori_ <ins>normal</ins> distribution on _b_-values, parameterized by its <ins>mean</ins> and its <ins>standard-deviation</ins>. The estimation of (_a_, _b_) parameters for all pixels is realized by execution of the program `compute_ab_values.py`, which loads this _a-priori_ information only if the filename is listed in the configuration file. One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
+* **[Optional] Prior _b_-value information for each pixel** (_e.g.,_ `b_prior_info.txt`): Provides optional constraints on _b_-values for each pixel defined in the grid output by the program `voronoi2density.py`. These constraints are expressed in terms of an _a-priori_ <ins>normal</ins> distribution on _b_-values, parameterized by its <ins>mean</ins> and its <ins>standard-deviation</ins>. The estimation of (_a_, _b_) parameters for all pixels is realized by execution of the program `compute_ab_values.py`, which loads this _a-priori_ information only if the filename is listed in the configuration file. One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
   Columns order: [CENTRAL LON] [CENTRAL LAT] [B_MEAN] [B_STD_DEV]
   ```
   # B-PRIOR INFORMATION FILE
