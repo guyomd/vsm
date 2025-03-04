@@ -70,69 +70,6 @@ class TruncatedGRestimator():
         Note:
             Missing MMax can be indicated as -9 or NaN in the input file.
         """
-
-        """
-        # Initialize bin durations:
-        self.bin_durations = np.ones((self.ncells, self.nbins))
-        for i in range(self.ncells):
-            # NB: bin list should already be decimated to those included in density file
-            self.bin_durations[i, :] = self.bins['durations']
-
-        cellinfo = np.ones((self.ncells, 4))  # For series of (lon, lat, mmin, mmax)
-        if isinstance(filename, str):
-            print(f'>> Read limits (and optionally, durations) of freq.-mag. '
-                  + f'distributions in "{filename}"')
-            gridinfo = np.loadtxt(filename, delimiter=';')
-            # Check GRIDINFO Format:
-            # gridinfo[i,:] = [lon, lat, mmin, mmax, dur_i, dur_i+1, ..., dur_N]
-            if gridinfo.shape[1] < 3:
-                raise ValueError(f"{filename}:: Missing columns (at least 3 required: lon, lat, mmin)")
-            elif gridinfo.shape[1] == 3:
-                print(f'{filename}:: No max. magnitude specified, will use Mmax = Inf (untruncated model)')
-                print(f'{filename}:: No durations. Will use bin durations from {self.file_bins}')
-            elif gridinfo.shape[1] == 4:
-                print(f'{filename}:: Will use max. magnitudes as specified in file')
-                print(f'{filename}:: No durations. Will use bin durations from {self.file_bins}')
-            elif gridinfo.shape[1] > 4:
-                print(f'{filename}:: Specified bin durations will supercede those given in "{self.file_bins}"')
-
-            for i in range(self.ncells):
-                j = np.where((np.abs(gridinfo[:, 0] - self.densities[i, 0]) < COORD_PRECISION) & \
-                             (np.abs(gridinfo[:, 1] - self.densities[i, 1]) < COORD_PRECISION) )[0]
-                if len(j) == 0:
-                    print(f'{filename}:: Cannot find cell with coordinates ' +
-                          f'({self.densities[i, 0]:.6f}; {self.densities[i, 1]})')
-                    continue
-                elif len(j) > 1:
-                    raise ValueError(f'{filename}:: Found several lines with coordinates matching '
-                                     + f'({self.densities[i, 0]:.6f}; {self.densities[i, 1]}): {j}')
-
-                cellinfo[i, :3] = gridinfo[j, :3]  # Copy (lon, lat, Mmin) values
-                if gridinfo.shape[1] > 3:
-                    # Manage Mmax values (missing or not):
-                    if (gridinfo[j, 3].item() == -9.0) or np.isnan(gridinfo[j, 3]):
-                        cellinfo[i, 3] = np.inf  # untruncated G-R model
-                    else:
-                        cellinfo[i, 3] = gridinfo[j, 3].item()  # Copy Mmax
-                else:
-                    cellinfo[i, 3] = np.inf  # untruncated G-R model
-
-                # Update bin durations, if available in gridinfo:
-                if gridinfo.shape[1] > 4:
-                    self.bin_durations[i, :] = gridinfo[j, [4 + k for k in self.ibins]]
-        else:
-            print('>> Missing option "file_for_FMD_limits_and_durations" in configuration file')
-            print('>> MMAX: No upper truncation (i.e., MMAX = inf.)')
-            if self.mmin is None:
-                self.mmin = min(self.bins['mins'])
-                print(f'>> MMIN: Use the minimum lower bound of intervals read in "{self.file_bins}": {self.mmin:.2f}')
-            else:
-                print(f'>> MMIN: Use the minimum magnitude given in command-line: {self.mmin:.2f}')
-            cellinfo[:, :2] = self.densities[:, :2]
-            cellinfo[:, 2] = self.mmin
-            cellinfo[:, 3] = np.inf
-        self.cellinfo = cellinfo
-        """
         self.file_fmd = filename
         lons = self.densities[:, 0]
         lats = self.densities[:, 1]
