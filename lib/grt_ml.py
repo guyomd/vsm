@@ -100,7 +100,7 @@ class Dutfoy2020_Estimator():
         n = len(beta)
         beta = np.tile(beta.reshape((n, 1)), (1, self.nb))
         Di = np.tile(self.durs, (n, 1))
-        ci = np.tile(self.mags, (n, 1)) - self.m0
+        ci = np.tile(self.mags, (n, 1))
         ni = np.tile(self.cnts, (n, 1))
         T0 = np.sum(Di * np.exp(-beta * ci), axis=1)
         T1 = np.sum(ci * Di * np.exp(-beta * ci), axis=1)
@@ -114,8 +114,6 @@ class Dutfoy2020_Estimator():
         """
         see eqn (12)
 
-        !! Important !!
-        Note that in this function parameter "a" must correspond to log10(nb. events with mag >= m0)
         """
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
@@ -125,9 +123,6 @@ class Dutfoy2020_Estimator():
     def LL_with_prior(self, ab: np.ndarray, prior_fun):
         """
         see eqn (12), added of the log of a prior probability on b.
-
-        !! Important !!
-        Note that in this function parameter "a" must correspond to log10(nb. events with mag >= m0)
 
         NB: PRIOR_FUN must be a callable returning log(pdf(b)) and must be
         parameterized as a function of b, not beta !
@@ -142,10 +137,6 @@ class Dutfoy2020_Estimator():
         """
         see eqn (12), added of the log of normal prior probability on b,
         with mean MEAN_B and standard deviation STD_B.
-
-        !! Important !!
-        Note that in this function parameter "a" must correspond to log10(nb. events with mag >= m0)
-
         """
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
@@ -208,8 +199,6 @@ class Dutfoy2020_Estimator():
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
-        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
-        a += b * self.m0
         return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_no_prior_b_truncated(self, bounds_b):
@@ -229,8 +218,6 @@ class Dutfoy2020_Estimator():
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
-        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
-        a += b * self.m0
         return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_with_normal_prior(self, mean_b, std_b):
@@ -252,8 +239,6 @@ class Dutfoy2020_Estimator():
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
-        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
-        a += b * self.m0
         return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_with_truncated_normal_prior(self, mean_b, std_b, bounds_b):
@@ -278,8 +263,6 @@ class Dutfoy2020_Estimator():
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
-        # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
-        a += b * self.m0
         return a[0, 0], b[0, 0], rho, cov
 
     def _fisher_information_matrix(self, mubeta: np.ndarray, std_beta=np.inf):
