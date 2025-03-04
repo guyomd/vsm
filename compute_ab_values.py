@@ -248,7 +248,7 @@ class TruncatedGRestimator():
                 a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
             stdb = np.sqrt(cov[0, 0])
             stda = np.sqrt(cov[1, 1])
-            self.grt_params[i, :] = np.array([lon, lat, a[0, 0], b[0, 0], stda, stdb, rho, mc])
+            self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc])
 
     def _PL_estimation(self, max_mcmc_trials=1E6, global_b_prior_mean=1.0, global_b_prior_std=0.3,
                        apply_smoothing=True, b_truncation=None):
@@ -257,6 +257,7 @@ class TruncatedGRestimator():
         This algorithm inverts jointly paramters for all cells of the domain,
         using a MCMC algorithm. Thus, convergence can be long...
         """
+        raise Warning('Estimation of FMD parameters using the Penalized Likelihood (PL) approach is still experimental...')
         # First, remove cells with null density in the first bin
         # (indicating null density in every bins):
         condition = (self.densities[:, 2] != 0.0) & (self.prior_b[:, 0] != -9.0)

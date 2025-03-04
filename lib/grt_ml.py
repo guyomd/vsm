@@ -210,7 +210,7 @@ class Dutfoy2020_Estimator():
         rho, cov = self.correlation_coef(np.array((a,b)))
         # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
         a += b * self.m0
-        return a, b, rho, cov
+        return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_no_prior_b_truncated(self, bounds_b):
         """
@@ -231,7 +231,7 @@ class Dutfoy2020_Estimator():
         rho, cov = self.correlation_coef(np.array((a,b)))
         # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
         a += b * self.m0
-        return a, b, rho, cov
+        return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_with_normal_prior(self, mean_b, std_b):
         """
@@ -254,7 +254,7 @@ class Dutfoy2020_Estimator():
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
         # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
         a += b * self.m0
-        return a, b, rho, cov
+        return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_with_truncated_normal_prior(self, mean_b, std_b, bounds_b):
         """
@@ -280,7 +280,7 @@ class Dutfoy2020_Estimator():
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
         # Scale parameter "a" so that it corresponds to log10(nb. events with mag >=0):
         a += b * self.m0
-        return a, b, rho, cov
+        return a[0, 0], b[0, 0], rho, cov
 
     def _fisher_information_matrix(self, mubeta: np.ndarray, std_beta=np.inf):
         """
