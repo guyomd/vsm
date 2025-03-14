@@ -168,23 +168,6 @@ class Dutfoy2020_Estimator():
         T0 = self.TiUi(beta_opt)[0]
         return (self.N * self.alpha(beta_opt)) / (2 * np.sinh(beta_opt * self.delta) * T0)
 
-    def _unbias_b_value(self, b, N):
-        """
-        Remove the bias in b-value estimate obtained with the maximum likelihood estimator
-        when the number of observations is small (see Ogata and Yamashina, J. Phys. Earth, 1986)
-
-        :param b: float, maximum-likelihood b-value estimate
-        :param N: float, number of earthquakes observed in the FMD
-        :returns float, unbiased b-value estimate
-        """
-        return b * (N - 1) / N
-
-    def _unbias_beta_value(self, beta, N):
-        """
-        Apply Ogata & Yamashina (1986) formula to correct the bias in beta values
-        """
-        return self._unbias_b_value(beta, N)
-
     def find_optimal_ab_no_prior(self):
         """
         Search for optimal (a,b) parameters, see eqns (17) and (18)
@@ -195,7 +178,7 @@ class Dutfoy2020_Estimator():
                               bounds=[0.5 * np.log(10), 3.0 * np.log(10)]
                               )
         N = np.sum(self.cnts * self.durs)
-        beta = self._unbias_beta_value(res.x, N)
+        beta = res.x
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
@@ -214,7 +197,7 @@ class Dutfoy2020_Estimator():
                               bounds=[bounds_b[0] * np.log(10), bounds_b[1] * np.log(10)]
                               )
         N = np.sum(self.cnts * self.durs)
-        beta = self._unbias_beta_value(res.x, N)
+        beta = res.x
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
@@ -235,7 +218,7 @@ class Dutfoy2020_Estimator():
                               args=prior_args
                               )
         N = np.sum(self.cnts * self.durs)
-        beta = self._unbias_beta_value(res.x, N)
+        beta = res.x
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
@@ -259,7 +242,7 @@ class Dutfoy2020_Estimator():
                               args=prior_args
                               )
         N = np.sum(self.cnts * self.durs)
-        beta = self._unbias_beta_value(res.x, N)
+        beta = res.x
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
