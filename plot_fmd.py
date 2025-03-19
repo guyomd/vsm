@@ -60,13 +60,20 @@ if __name__ == "__main__":
     minmags = estim.bins['mins']
     maxmags = estim.bins['maxs']
     grt_prms = np.loadtxt(os.path.join(prms.output_dir, 'ab_values.txt'), delimiter=';')
+    if estim.cellinfo is None:
+        xy = grt_prms[:, :2]  # Longitudes, Latitudes
+    else:
+        xy = estim.cellinfo[:, :2]
     if prms.fmd_info_file:
         # Load FMD information (Mmin, Mmax, and optionally bin durations):
         estim.load_fmd_info(prms.fmd_info_file)
+    if estim.bin_durations is None:
+        estim.bin_durations = np.tile(estim.bins['durations'].reshape((1, estim.nbins)),
+                                            (estim.ncells, 1))
 
     # Plot FMDs for all pixels requested:    
     for indx in args.index:
-            centroid = Point([estim.cellinfo[indx, 0], estim.cellinfo[indx, 1]])
+            centroid = Point(xy[indx, :].tolist())
             print(f">> Plot FMD for pixel {indx} ({centroid.x}, {centroid.y})")
             a = _set_value_if_not_nan(grt_prms[indx, 2])
             b = _set_value_if_not_nan(grt_prms[indx, 3])
