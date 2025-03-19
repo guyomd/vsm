@@ -78,6 +78,13 @@ if __name__ == "__main__":
             a = _set_value_if_not_nan(grt_prms[indx, 2])
             b = _set_value_if_not_nan(grt_prms[indx, 3])
             da = _set_value_if_not_nan(grt_prms[indx, 4])
+
+            if np.isinf(a):
+                a = None
+                b = None
+                da = None
+                print(f'Warning: Infinite a-value detected. Do not plot FMD model.')
+
             if prms.fmd_info_file:
                 mmax = _set_value_if_not_nan(estim.cellinfo[indx, 3], additional_condition=lambda x: x > 0)
             else:
@@ -86,8 +93,12 @@ if __name__ == "__main__":
             # Reconstruct annual seismicity rates for the current cell (normalized to scaling area):
             cell_intensities = np.reshape(estim.densities[indx, 2:], (estim.nbins, ))
             cell_durations = np.reshape(estim.bin_durations[indx, :], (estim.nbins,))
-            # --> Eventually, remove unused bins (with durations <= 0):
+
+            # Remove unused bins (with durations <= 0):
             ib = (estim.bin_durations[indx, :] > 0)
+            if np.all(cell_intensities == 0):
+                print(f'Error: Event counts equal to 0 in every magnitude bin. Skipping.')
+                continue
 
             fmd_histogram(minmags[ib],
                           maxmags[ib],
