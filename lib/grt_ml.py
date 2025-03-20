@@ -175,7 +175,7 @@ class Dutfoy2020_Estimator():
         beta0 = np.log(10)
         res = minimize_scalar(self._beta_root_function,
                               method='bounded',
-                              bounds=[0.5 * np.log(10), 3.0 * np.log(10)]
+                              bounds=[0.0 * np.log(10), 3.0 * np.log(10)]
                               )
         N = np.sum(self.cnts * self.durs)
         beta = res.x
