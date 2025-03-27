@@ -51,7 +51,7 @@ class VoronoiSmoothingAlgorithm:
         if mesh_step_unit == "km":
             cells_m, centroids_m = build_mesh(bounds_m,
                                               self.prms.mesh_step,
-                                              scaling2unit=self.prms.epsg_scaling)
+                                              scaling2unit=1 / self.prms.epsg_scaling2km)
             cells = convert_to_EPSG(cells_m,
                                     in_epsg=self.prms.internal_epsg,
                                     out_epsg=self.prms.input_epsg)
@@ -139,10 +139,10 @@ class VoronoiSmoothingAlgorithm:
         vor_diagram_m, weights = clipped_voronoi_diagram(mp_epic_bin,
                                                          bounds_m,
                                                          verbose=self.prms.is_verbose)
-        # Compute polygon density in km2:
+        # Compute polygon density per km2:
         vor_densities_km2 = eqdensity_per_polygon(vor_diagram_m,
                                                   weights,
-                                                  scaling2unit=self.prms.epsg_scaling,
+                                                  scaling2unit=self.prms.epsg_scaling2km,
                                                   log_values=False)
         vor_densities_km2 *= self.prms.density_scaling_factor
 
@@ -155,7 +155,7 @@ class VoronoiSmoothingAlgorithm:
         counts, cell_densities_km2 = eqcounts_per_cell(cells_m,
                                                        vor_diagram_m,
                                                        weights,
-                                                       scaling2unit=self.prms.epsg_scaling)
+                                                       scaling2unit=self.prms.epsg_scaling2km)
 
         if np.round(counts.sum()) != weights.sum():
             raise AssertionError(f'Total counts over the mesh domain ({counts.sum()}) ' +

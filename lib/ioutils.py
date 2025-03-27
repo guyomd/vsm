@@ -16,7 +16,7 @@ class ParameterSet():
         self.output_dir = '.'
         self.input_epsg = None
         self.internal_epsg = None
-        self.epsg_scaling = None
+        self.epsg_scaling2km = None
         self.mesh_step = None
         self.mesh_step_unit = None
         self.is_verbose = False
@@ -83,16 +83,16 @@ class ParameterSet():
                 
                 elif items[0] == 'unit_for_internal_CRS_coordinates:':
                     if items[1] in ['m', 'meters', 'meter']:
-                        self.epsg_scaling = 0.001
+                        self.epsg_scaling2km = 0.001
                     elif items[1] in ['km', 'kilometers', 'kilometer']:
-                        self.epsg_scaling = 1.0
+                        self.epsg_scaling2km = 1.0
                     elif items[1] in ['feet', 'ft']:
-                        self.epsg_scaling = 0.0003048
-                    print(f'{filename}:: Scaling coef. to convert internal coordinates in km: {self.epsg_scaling}')
+                        self.epsg_scaling2km = 0.0003048
+                    print(f'{filename}:: Scaling coef. to convert internal coordinates in km: {self.epsg_scaling2km}')
         
                 elif items[0] == 'mesh_discretization_step:':
                     self.mesh_step = float(items[1])
-                    self.mesh_step_unit = items[2]  # km or deg
+                    self.mesh_step_unit = items[2]  # km or deg only!
                     print(f'{filename}:: Zoneless grid discretization step: {self.mesh_step} {self.mesh_step_unit}')
 
                 elif items[0] == 'density_scaling_factor:':
@@ -150,7 +150,7 @@ class ParameterSet():
                         'bins_file',
                         'input_epsg', 
                         'internal_epsg', 
-                        'epsg_scaling', 
+                        'epsg_scaling2km',
                         'mesh_step', 
                         'mesh_step_unit'] + mandatory_fields:
             if getattr(self, attname) is None:

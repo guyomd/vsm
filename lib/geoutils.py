@@ -34,7 +34,7 @@ def convert_to_EPSG(geom, in_epsg="EPSG:4326", out_epsg="EPSG=32618"):
 ## GEOSPATIAL OPERATIONS: #####################################################
 def eqdensity_per_polygon(polygons, weights: np.ndarray, scaling2unit=1.0, log_values=False):
     """
-    Compute event density in each polygon, given individual weights in each polygon
+    Compute event density (per km^2) in each polygon, given individual weights in each polygon
     """
     values = []
     for pol, w in zip(polygons.geoms, weights):
@@ -140,8 +140,9 @@ def build_mesh(bounds: Polygon, step: float, scaling2unit: float = 1.0):
     #     bin step in every direction. Errors may occur is mesh does not extend
     #     sufficiently away from the bounding polygon, due to rounding errors
     #     associated with coordinate conversion.
-    lons = np.arange(xmin * scaling2unit - step, xmax * scaling2unit + 2 * step, step)
-    lats = np.arange(ymin * scaling2unit - step, ymax * scaling2unit + 2 * step, step)
+    step *= scaling2unit
+    lons = np.arange(xmin - step, xmax + 2 * step, step)
+    lats = np.arange(ymin - step, ymax + 2 * step, step)
     nlon = len(lons)
     nlat = len(lats)
     print(f'>> Initial mesh....')

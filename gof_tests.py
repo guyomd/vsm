@@ -49,7 +49,7 @@ class SeismicityRateMap():
         cell_m = convert_to_EPSG(cell,
                                  in_epsg=self.prms.input_epsg,
                                  out_epsg=self.prms.internal_epsg)
-        cell_area = cell_m.area * (self.prms.epsg_scaling ** 2)  # Convert to km^2
+        cell_area = cell_m.area * (self.prms.epsg_scaling2km ** 2)  # Convert to km^2
         scaling_factor = cell_area / self.prms.density_scaling_factor
         rate_ge_mmin = 10 ** (a - b * self.mmin) * scaling_factor
         return rate_ge_mmin, cell_area
@@ -218,7 +218,7 @@ class ResidualAnalysisTester():
         mpts_m = convert_to_EPSG(mpts,
                                  in_epsg=self.prms.input_epsg,
                                  out_epsg=self.prms.internal_epsg)
-        xy = np.array([[pt.x * self.prms.epsg_scaling, pt.y * self.prms.epsg_scaling] for pt in mpts_m.geoms])
+        xy = np.array([[pt.x * self.prms.epsg_scaling2km, pt.y * self.prms.epsg_scaling2km] for pt in mpts_m.geoms])
         Lw = np.zeros_like(rvalues)
         Lw95low = np.zeros_like(rvalues)
         Lw95upp = np.zeros_like(rvalues)

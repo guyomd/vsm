@@ -82,6 +82,10 @@ if __name__ == "__main__":
                         help="Tighten map boundaries to the bounding polygon defined in file 'bounds.txt'",
                         action='store_true')
 
+    parser.add_argument('-p', '--projection',
+                        help="Specify map projection using the GMT software single-letter code (default: M for Mercator)",
+                        default='M')
+
     args = parser.parse_args()
 
     # Load parameters:
@@ -184,7 +188,7 @@ if __name__ == "__main__":
                      dpi=300,
                      spatial_buffer=buffer,
                      add_polygon=bounding_box,
-                     map_projection="M15c",
+                     map_projection=f"{args.projection}15c",
                      logscale=args.log_colorscale,
                      figframe=frame,
                      transparency_index=args.set_transparency)
