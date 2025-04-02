@@ -26,6 +26,7 @@ This package consists in two main modules added of a suite of utilities for plot
     
 * <ins>Testing utilities</ins>:
   * **`gof_tests.py`** : ***[ Under development ].*** Goodness-of-fit tests based on residual analysis.
+  * **TODO** : implement CSEP testing methods based on PyCSEP functionalites
 
 ## Schematic workflow ##
 **TODO:** Add sketches for the three module `voronoi2density.py`, `compute_ab_values.py` and `make_plots.py` showing:\
