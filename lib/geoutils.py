@@ -323,7 +323,7 @@ def reorder_germs(diagram: GeometryCollection, germs: MultiPoint):
                 germ = pt
                 break
         ordered_germs.append(germ)
-    return MultiPoint(ordered_germs)
+    return GeometryCollection(ordered_germs)
 
 
 def polygon2triangles(polygon: Polygon, germ: Point):
@@ -351,14 +351,14 @@ def polygon2triangles(polygon: Polygon, germ: Point):
     return triangles, np.array(weights)
 
 
-def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, germs: MultiPoint):
+def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, germs: GeometryCollection):
     """
     Returns a MultiPolygon object consisting in a collection of Voronoi cells subdivided into triangles
 
     :param diagram: shapely.GeometryCollection instance, Voronoi diagram
     :param weights: numpy.ndarray instance, earthquake count for each Voronoi polygon (can be less than 1 if polygon was
     split before)
-    :param germs: shapely.MultiPoint instance, Germs of Voronoi polygons. Must be in the same order than DIAGRAM!
+    :param germs: shapely.GeometryCollection instance, Germs of Voronoi polygons. Must be in the same order than DIAGRAM!
     """
     subdivided_diagram = list()
     subdivided_weights = list()
