@@ -322,7 +322,7 @@ def reorder_germs(diagram: GeometryCollection, germs: MultiPoint):
                 germ = pt
                 break
         ordered_germs.append(germ)
-    return ordered_germs
+    return MultiPoint(ordered_germs)
 
 
 def polygon2triangles(polygon: Polygon, germ: Point):
