@@ -29,7 +29,7 @@ class ParameterSet():
         self.b_value_for_correction_term = 1.0  # b-value used to correct the bias of perturbed magnitudes
         self.save_realizations = False
         self.nb_parallel_tasks = None
-        self.subdivide_polygons = True  # Activate/De-activate Voronoi polygon sub-division into triangles using the germ as a common vertex
+        self.subdivide_polygons = False  # Activate/De-activate Voronoi polygon sub-division into triangles using the germ as a common vertex
     
     def load_settings(self, filename, mandatory_fields=[]) -> None:
         """
