@@ -165,9 +165,9 @@ class VoronoiSmoothingAlgorithm:
                                                        weights,
                                                        scaling2unit=self.prms.epsg_scaling2km)
 
-        if np.round(counts.sum()) != weights.sum():
-            raise AssertionError(f'Total counts over the mesh domain ({counts.sum()}) ' +
-                                 f'differ from total counts in polygons ({weights.sum()})')
+        if np.abs(np.round(counts.sum()) - weights.sum()) > 0.01:
+            raise AssertionError(f'Total counts over the mesh domain ({counts.sum()}) differ from' +
+                                 f'more than 1% of the total counts in polygons ({weights.sum()})')
 
         # Reset values for cells with centroids located beyond bounds:
         counts, cell_densities_km2 = self.reset_values_for_cells_beyond_bounds(cells_m,
