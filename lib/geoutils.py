@@ -104,7 +104,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
                     elif isinstance(inter, MultiPolygon):
                         # Handles the situation when a Voronoi polygon is divided
                         # into several polygons after intersection,
-                        # then distribute unit weight for each sub-polygon:
+                        # then distribute the unit weight (or count) over all sub-polygons:
                         nsub = len(inter.geoms)
                         if verbose:
                             print(f'WARNING: Voronoi polygon sub-divided into {nsub} parts after intersection:')
