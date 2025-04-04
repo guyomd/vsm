@@ -13,7 +13,7 @@ from shapely import (MultiLineString,
                      intersects,
                      make_valid,
                      get_num_points,
-                     get_points,
+                     get_point,
                      is_closed,
                      )
 from shapely.ops import transform, polygonize
