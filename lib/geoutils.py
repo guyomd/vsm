@@ -15,6 +15,7 @@ from shapely import (MultiLineString,
                      get_num_points,
                      get_point,
                      is_closed,
+                     is_empty,
                      )
 from shapely.ops import transform, polygonize
 from shapely.strtree import STRtree
@@ -316,7 +317,7 @@ def reorder_germs(diagram: GeometryCollection, germs: MultiPoint):
     """
     ordered_germs = list()
     for polygon in diagram.geoms:
-        germ = None
+        germ = Point()  # Empty geometry
         for pt in germs.geoms:
             if pt.within(polygon):
                 germ = pt
@@ -362,7 +363,7 @@ def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, ge
     subdivided_diagram = list()
     subdivided_weights = list()
     for polygon, germ, w in zip(diagram.geoms, germs.geoms, weights):
-        if germ is None:
+        if is_empty(germ):
             # May happen when Voronoi polygon were split before, in this case cancel subdivision for the polygon:
             subdivided_diagram.append(polygon)
             subdivided_weights.append(w)
