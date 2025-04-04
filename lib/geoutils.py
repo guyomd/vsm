@@ -77,7 +77,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
     
     else:
         # NB: Voronoi diagram must be computed using equal-area projection
-        polygons = voronoi_polygons(multi_pt, ordered=True)
+        polygons = voronoi_polygons(multi_pt)
 
         if (bounds is not None) and (not polygons.is_empty):
             # If necessary, convert to the same CRS than bounds:
@@ -306,6 +306,25 @@ def random_locations_from_ellipsoid(x_km, y_km, semi_major_axis_len, semi_minor_
     return rv[:, 0], rv[:, 1]
 
 
+def reorder_germs(diagram: GeometryCollection, germs: MultiPoint):
+    """
+    Reorder germs in the same order than Voronoi polygon.
+    Set germ to None when no germ can be associated with a polygon.
+
+    :param diagram: shapely.GeometryCollection instance, Voronoi diagram
+    :param germs: shapely.MultiPoint instance, Germs of Voronoi polygons
+    """
+    ordered_germs = list()
+    for polygon in diagram.geoms:
+        germ = None
+        for pt in germs.geoms:
+            if pt.within(polygon):
+                germ = pt
+                break
+        ordered_germs.append(germ)
+    return ordered_germs
+
+
 def polygon2triangles(polygon: Polygon, germ: Point):
     """
     Subdivide a polygon with N vertices into a collection of triangles all sharing the input germ as a common vertex,
@@ -337,13 +356,19 @@ def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, ge
 
     :param diagram: shapely.GeometryCollection instance, Voronoi diagram
     :param weights: numpy.ndarray instance, earthquake count for each Voronoi polygon (can be less than 1 if polygon was
-    divided before)
+    split before)
+    :param germs: shapely.MultiPoint instance, Germs of Voronoi polygons. Must be in the same order than DIAGRAM!
     """
     subdivided_diagram = list()
     subdivided_weights = list()
     for polygon, germ, w in zip(diagram.geoms, germs.geoms, weights):
-        triangles, triweights = polygon2triangles(polygon, germ)
-        subdivided_diagram.append(triangles)
-        subdivided_weights.append(triweights * w)
+        if germ is None:
+            # May happen when Voronoi polygon were split before, in this case cancel subdivision for the polygon:
+            subdivided_diagram.append(polygon)
+            subdivided_weights.append(w)
+        else:
+            triangles, triweights = polygon2triangles(polygon, germ)
+            subdivided_diagram.append(triangles)
+            subdivided_weights.append(triweights * w)
     return GeometryCollection(subdivided_diagram), np.array(subdivided_weights)
 
