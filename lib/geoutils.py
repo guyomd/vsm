@@ -369,7 +369,8 @@ def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, ge
             subdivided_weights.append(w)
         else:
             triangles, triweights = polygon2triangles(polygon, germ)
-            subdivided_diagram.append(triangles)
-            subdivided_weights.append(triweights * w)
+            for tri, wtri in zip(triangles, triweights):
+                subdivided_diagram.append(tri)
+                subdivided_weights.append(wtri * w)
     return GeometryCollection(subdivided_diagram), np.array(subdivided_weights)
 
