@@ -16,6 +16,7 @@ from shapely import (MultiLineString,
                      get_point,
                      is_closed,
                      is_empty,
+                     simplify,
                      )
 from shapely.ops import transform, polygonize
 from shapely.strtree import STRtree
@@ -368,7 +369,9 @@ def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, ge
             subdivided_diagram.append(polygon)
             subdivided_weights.append(w)
         else:
-            triangles, triweights = polygon2triangles(polygon, germ)
+            # First, simplify polygons, mainly aimed at removing interpolated points along domain boundaries:
+            pol = simplify(polygon, polygon.exterior.length / 1000)
+            triangles, triweights = polygon2triangles(pol, germ)
             for tri, wtri in zip(triangles, triweights):
                 subdivided_diagram.append(tri)
                 subdivided_weights.append(wtri * w)
