@@ -12,6 +12,9 @@ from shapely import (MultiLineString,
                      prepare,
                      intersects,
                      make_valid,
+                     get_num_points,
+                     get_points,
+                     is_closed,
                      )
 from shapely.ops import transform, polygonize
 from shapely.strtree import STRtree
@@ -74,7 +77,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
     
     else:
         # NB: Voronoi diagram must be computed using equal-area projection
-        polygons = voronoi_polygons(multi_pt)  
+        polygons = voronoi_polygons(multi_pt, ordered=True)
 
         if (bounds is not None) and (not polygons.is_empty):
             # If necessary, convert to the same CRS than bounds:
@@ -301,3 +304,46 @@ def random_locations_from_ellipsoid(x_km, y_km, semi_major_axis_len, semi_minor_
     #corrcoef = cov_xy / np.sqrt(varx * vary)  # Correlation coefficient
     rv = rng.multivariate_normal(means, covmat, size=n)
     return rv[:, 0], rv[:, 1]
+
+
+def polygon2triangles(polygon: Polygon, germ: Point):
+    """
+    Subdivide a polygon with N vertices into a collection of triangles all sharing the input germ as a common vertex,
+    and using each two consecutive vertices of the input polygon
+
+    :param polygon: shapely.Polygon instance, Voronoi polygon
+    :param germ: shapely.Point instance, Germ of the Voronoi polygon
+    """
+    if is_closed(polygon.exterior):
+        ntri = get_num_points(polygon.exterior) - 1  # Do not account for repeated last point
+    else:
+        ntri = get_num_points(polygon.exterior)
+    triangles = list()
+    weights = list()
+    for i in range(ntri):
+        if i == ntri - 1:
+            tripts = get_point(polygon.exterior, [i, 0]).tolist()
+        else:
+            tripts = get_point(polygon.exterior, [i, i + 1]).tolist()
+        tripts.append(germ)
+        triangles.append(Polygon(tripts))
+        weights.append(1.0 / ntri)  # Distribute uniform weight over each of the NTRI sub-triangles
+    return triangles, np.array(weights)
+
+
+def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, germs: MultiPoint):
+    """
+    Returns a MultiPolygon object consisting in a collection of Voronoi cells subdivided into triangles
+
+    :param diagram: shapely.GeometryCollection instance, Voronoi diagram
+    :param weights: numpy.ndarray instance, earthquake count for each Voronoi polygon (can be less than 1 if polygon was
+    divided before)
+    """
+    subdivided_diagram = list()
+    subdivided_weights = list()
+    for polygon, germ, w in zip(diagram.geoms, germs.geoms, weights):
+        triangles, triweights = polygon2triangles(polygon, germ)
+        subdivided_diagram.append(triangles)
+        subdivided_weights.append(triweights * w)
+    return GeometryCollection(subdivided_diagram), np.array(subdivided_weights)
+

@@ -29,6 +29,7 @@ class ParameterSet():
         self.b_value_for_correction_term = 1.0  # b-value used to correct the bias of perturbed magnitudes
         self.save_realizations = False
         self.nb_parallel_tasks = None
+        self.subdivide_polygons = True  # Activate/De-activate Voronoi polygon sub-division into triangles using the germ as a common vertex
     
     def load_settings(self, filename, mandatory_fields=[]) -> None:
         """
@@ -143,6 +144,13 @@ class ParameterSet():
                         print(f'{filename}:: Use {self.nb_parallel_tasks} parallel tasks')
                     else:
                         self.nb_parallel_tasks = None  # Defensive programming
+
+                elif items[0] == 'subdivide_polygons:':
+                    self.subdivide_polygons = (items[1].strip().lower() == 'true')
+                    if self.subdivide_polygons :
+                        print(f'{filename}:: Subdivides Voronoi polygons in triangles')
+                    else:
+                        print(f'{filename}:: De-activated Voronoi polygon subdivision in triangles')
 
         # Defensive programming: check for missing specifications
         for attname in ['epicenters_file',

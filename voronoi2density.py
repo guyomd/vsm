@@ -15,7 +15,8 @@ from lib.geoutils import (convert_to_EPSG,
                           eqcounts_per_cell,
                           select_events,
                           interpolate_polygon_coords,
-                          random_locations_from_ellipsoid)
+                          random_locations_from_ellipsoid,
+                          subdivide_voronoi_cells)
 
 
 class VoronoiSmoothingAlgorithm:
@@ -139,6 +140,11 @@ class VoronoiSmoothingAlgorithm:
         vor_diagram_m, weights = clipped_voronoi_diagram(mp_epic_bin,
                                                          bounds_m,
                                                          verbose=self.prms.is_verbose)
+
+        # If requested, sub-divide Voronoi cells in sub-triangles:
+        if self.subdivide_polygons:
+            vor_diagram_m, weights = subdivide_voronoi_cells(vor_diagram_m, weights, mp_epic_bin)
+
         # Compute polygon density per km2:
         vor_densities_km2 = eqdensity_per_polygon(vor_diagram_m,
                                                   weights,
