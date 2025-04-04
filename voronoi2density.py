@@ -143,7 +143,7 @@ class VoronoiSmoothingAlgorithm:
                                                          verbose=self.prms.is_verbose)
 
         # If requested, sub-divide Voronoi cells in sub-triangles:
-        if self.subdivide_polygons:
+        if self.prms.subdivide_polygons:
             germs = reorder_germs(vor_diagram_m, mp_epic_bin)
             vor_diagram_m, weights = subdivide_voronoi_cells(vor_diagram_m, weights, germs)
 
