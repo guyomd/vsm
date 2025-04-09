@@ -67,7 +67,8 @@ def map_polygons(polygons_file: str,
                  map_projection: str = "M15c",
                  logscale=False,
                  figframe="a",
-                 transparency_index=50):
+                 transparency_index=50,
+                 add_points=None):
     """
     Draw a geographical map of Voronoi cells, colored as a function of field -Z in input file.
     If clim=None, coloring of polygons is deactivated.
@@ -101,8 +102,7 @@ def map_polygons(polygons_file: str,
         pygmt.makecpt(cmap=colormap, 
                       reverse=colormap_reversal, 
                       series=zlim_str,
-                      background="o",
-                      output='palette.cpt')
+                      background="o")
 
     fig = pygmt.Figure()
     mapbounds = [limits[0] - spatial_buffer, 
@@ -134,7 +134,7 @@ def map_polygons(polygons_file: str,
                  pen=pen, 
                  close=True, 
                  fill='+z', 
-                 cmap='palette.cpt',
+                 cmap=True,
                  transparency=transparency_index)
     else:
         fig.plot(data=polygons_file, 
@@ -142,11 +142,17 @@ def map_polygons(polygons_file: str,
                  pen=pen, 
                  close=True, 
                  fill=None)
-        
-    if clim:
-        fig.colorbar(frame=f"x+l{cbar_title}", cmap='palette.cpt')
-        remove('palette.cpt')
 
+    if add_points:
+        x = [g.x for g in add_points.geoms]
+        y = [g.y for g in add_points.geoms]
+        fig.plot(x=x,
+                 y=y,
+                 style='c0.2c',
+                 pen='black',
+                 fill=None)
+    if clim:
+        fig.colorbar(frame=f"x+l{cbar_title}")
     if savefig:
         if isinstance(savefig, str):
             filename = savefig

@@ -12,6 +12,7 @@ from lib.ioutils import (ParameterSet,
                          change_zvalue_in_polygon_file,
                          load_polygons,
                          polygons_to_file)
+from lib.geoutils import select_events
 
 
 if __name__ == "__main__":
@@ -26,30 +27,24 @@ if __name__ == "__main__":
                         nargs='+',
                         type=str)
 
-    parser.add_argument("-c", "--colormap", 
-                        help="Specify GMT colormap", 
-                        default="roma")
-
-    parser.add_argument("-i", "--invert",
-                        help="Invert colormap",
-                        action='store_true')
-
-    parser.add_argument("-r", "--range", 
-                        help="Specify lower and upper limits for the colormap", 
-                        nargs=2,
-                        type=float,
-                        default=None)
-                        
-    parser.add_argument("-t", "--title",
-                        help="Figure title")
-
     parser.add_argument('-b', '--boundaries',
                         help="Plot polygons boundaries",
                         action='store_true')
 
-    parser.add_argument('-o', '--output-directory',
-                        help="Output directory for figures",
-                        default=None)
+    parser.add_argument("-c", "--colormap", 
+                        help="Specify GMT colormap", 
+                        default="roma")
+
+    parser.add_argument('-e', '--overlay-events',
+                        help="Overlay earthquakes from the catalogue which verify TMIN < T < TMAX and MAGMIN < M < MAGMAX",
+                        nargs=4,
+                        metavar=('MAGMIN', 'MAGMAX', 'TMIN', 'TMAX'),
+                        default=None,
+                        type=float)
+
+    parser.add_argument("-i", "--invert",
+                        help="Invert colormap",
+                        action='store_true')
 
     parser.add_argument('-l', '--logvalues',
                         help="Apply log10 transformation to Z-values before plotting (linear colorscaling)",
@@ -63,15 +58,32 @@ if __name__ == "__main__":
                         help="Remove coastlines and axes ticks (useful for synthetics)",
                         action='store_true')
 
-    parser.add_argument('-e', '--exclude-infinite',
-                        help="Replace infinite Z-values by NaN to disable coloring. " +
-                             "When option '-l' is used, replacement occurs AFTER log10 transformation",
-                        action='store_true')
+    parser.add_argument('-o', '--output-directory',
+                        help="Output directory for figures",
+                        default=None)
+
+    parser.add_argument('-p', '--projection',
+                        help="Specify map projection using the GMT software single-letter code (default: M for Mercator)",
+                        default='M')
+
+    parser.add_argument("-r", "--range", 
+                        help="Specify lower and upper limits for the colormap", 
+                        nargs=2,
+                        type=float,
+                        default=None)
 
     parser.add_argument('-s', '--set-transparency',
                         help="Set transparency index, from 0 (opaque) to 100",
                         type=int,
                         default=30)
+
+    parser.add_argument("-t", "--title",
+                        help="Figure title")
+
+    parser.add_argument('-x', '--exclude-infinite',
+                        help="Replace infinite Z-values by NaN to disable coloring. " +
+                             "When option '-l' is used, replacement occurs AFTER log10 transformation",
+                        action='store_true')
 
     parser.add_argument('-z', '--exclude-zeros',
                         help="Exclude cells with null Z-values. " +
@@ -81,10 +93,6 @@ if __name__ == "__main__":
     parser.add_argument('--tight',
                         help="Tighten map boundaries to the bounding polygon defined in file 'bounds.txt'",
                         action='store_true')
-
-    parser.add_argument('-p', '--projection',
-                        help="Specify map projection using the GMT software single-letter code (default: M for Mercator)",
-                        default='M')
 
     args = parser.parse_args()
 
@@ -100,9 +108,18 @@ if __name__ == "__main__":
 
     # Load geographical boundaries:
     bounding_box = load_points(prms.bounds_file)
-           
+
+    # Load earthquakes epicentres, if required:
+    if args.overlay_events is not None:
+        mp_epic, dates, mags, uncert = load_points(prms.epicenters_file)
+        limits = np.array([0] + args.overlay_events)
+        mp_epic_sel, m_sel, t_sel = select_events(mp_epic, mags, dates, bounding_box, limits)
+        print(f'>> Overlay {len(mp_epic_sel.geoms)} epicenters with {limits[1]} <= M < {limits[2]} and {limits[3]} <= T <= {limits[4]}')
+    else:
+        mp_epic_sel = None
+
     for inputfile in args.files:
-        print(inputfile)
+        print('\n' + inputfile)
         prefix, ext = os.path.splitext(os.path.basename(inputfile))
         tmpfiles = []
 
@@ -191,7 +208,8 @@ if __name__ == "__main__":
                      map_projection=f"{args.projection}15c",
                      logscale=args.log_colorscale,
                      figframe=frame,
-                     transparency_index=args.set_transparency)
+                     transparency_index=args.set_transparency,
+                     add_points=mp_epic_sel)
 
         # Delete temporary files:
         if len(tmpfiles) > 0:
