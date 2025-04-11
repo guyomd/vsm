@@ -270,7 +270,7 @@ def load_bins(filename):
     return B
 
 
-def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, coord_precision=1E-6):
+def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, mmax=None, coord_precision=1E-6):
     """
     Load FMD information (Mmin, Mmax, and optionally bin durations)
     FMD_FILE Format: LON; LAT; MMIN; MMAX [; BIN_1_DURATION; ...; BIN_n_DURATION]
@@ -278,7 +278,8 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
         Missing MMax can be indicated as -9 or NaN in the input file.
     :param lons, lats: np.ndarray, cell longitudes and latitudes
     :param ibins: iterable, indices of magnitude-bins used in the analysis
-    :param unif_bin_durs: np.ndarray, completeness durations for each magnitude bin
+    :param mmin: float, user-specified minimum magnitude truncation (overwrites values read from file)
+    :param mmax: float, user-specified maximum magnitude truncation (overwrites values read from file)
     """
     ncells = len(lons)
     mbins = load_bins(mbins_file)
@@ -326,32 +327,51 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
                 raise ValueError(f'{fmd_file}:: Found several lines with coordinates matching '
                                + f'({lons[i]:.6f}; {lats[i]}): {j}')
 
-            cellinfo[i, :3] = gridinfo[j, :3]  # Copy (lon, lat, Mmin) values
-            if gridinfo.shape[1] > 3:
-                # Manage Mmax values (missing or not):
-                if (gridinfo[j, 3].item() == -9.0) or np.isnan(gridinfo[j, 3]):
-                    cellinfo[i, 3] = np.inf  # untruncated G-R model
-                else:
-                    cellinfo[i, 3] = gridinfo[j, 3].item()  # Copy Mmax
+            cellinfo[i, :2] = gridinfo[j, :2]  # Copy (lon, lat) values
+
+            # Manage Mmin values:
+            if mmin is None:
+                cellinfo[i, 2] = gridinfo[j, 2]  # Copy Mmin values
             else:
-                cellinfo[i, 3] = np.inf  # untruncated G-R model
+                print(f'{fmd_file}:: Overwrite MMIN with the value given in command-line ({mmin:.2f})')
+                cellinfo[i, 2] = mmin
+
+            # Manage Mmax values:
+            if mmax is None:
+                if gridinfo.shape[1] > 3:
+                    if (gridinfo[j, 3].item() == -9.0) or np.isnan(gridinfo[j, 3]):
+                        cellinfo[i, 3] = np.inf  # untruncated G-R model
+                    else:
+                        cellinfo[i, 3] = gridinfo[j, 3].item()  # Copy Mmax
+                else:
+                    cellinfo[i, 3] = np.inf  # untruncated G-R model
+            else:
+                print(f'{fmd_file}:: Overwrite MMAX with the value given in command-line ({mmax:.2f})')
+                cellinfo[i, 3] = mmax
 
             # Update bin durations, if available in gridinfo:
             if gridinfo.shape[1] > 4:
                 mbins_durs_per_cell[i, :] = gridinfo[j, [4 + k for k in ibins]]
         print(f'{fmd_file}:: Loaded FMD parameters ({loaded_params}) for {ncells} cells')
-    else:
-        print('>> Missing option "file_for_FMD_limits_and_durations" in configuration file')
+
+    else:  # No file given
+        print('>> Un-specified option "file_for_FMD_limits_and_durations" in configuration file')
         print('>> MMAX: No upper truncation (i.e., MMAX = inf.)')
         if mmin is None:
             mmin = min(mbins[ibins, 1])  # Use lower bound of magnitude intervals
-            print(f'>> MMIN: Use the minimum lower bound of intervals read in "{mbins_file}": {mmin:.2f}')
+            print(f'>> MMIN: Use the minimum lower bound of intervals read in "{mbins_file}" ({mmin:.2f})')
         else:
-            print(f'>> MMIN: Use the minimum magnitude given in command-line: {mmin:.2f}')
+            print(f'>> MMIN: Use the value given in command-line for all pixels ({mmin:.2f})')
+
+        if mmax is None:
+            mmax = np.inf
+            print(f'>> MMAX: Use an untruncated Gutenberg-Richter model')
+        else:
+            print(f'>> MMAX: Use the value given in command-line for all pixels ({mmax:.2f})')
         cellinfo[:, 0] = lons
         cellinfo[:, 1] = lats
         cellinfo[:, 2] = mmin
-        cellinfo[:, 3] = np.inf
+        cellinfo[:, 3] = mmax
     return cellinfo, mbins_durs_per_cell
 
 def polygons_to_file(filename, polygons: GeometryCollection, zvalues=None, verbose=True):

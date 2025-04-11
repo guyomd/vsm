@@ -41,6 +41,7 @@ class TruncatedGRestimator():
         self.grt_params = None
         self.ibins = None
         self.mmin = None
+        self.mmax = None
 
     def load_densities(self, filename, scaling_factor=1.0):
         self.file_densities = filename
@@ -79,6 +80,7 @@ class TruncatedGRestimator():
             fmd_file=self.file_fmd,
             ibins=self.ibins,
             mmin=self.mmin,
+            mmax=self.mmax,
             coord_precision=COORD_PRECISION)
 
     def load_prior_on_b(self, filename=None, b_mean=1.0, b_std=1.0):
@@ -257,6 +259,12 @@ if __name__ == "__main__":
                         help="Set the minimum magnitude used to estimate FMD parameters",
                         default=None,
                         type=float)
+
+    parser.add_argument("--mmax",
+                        help="Set the maximum magnitude of the truncated Gutenberg-Richter model",
+                        default=None,
+                        type=float)
+
     args = parser.parse_args()
     
     # Load parameters:
@@ -267,6 +275,7 @@ if __name__ == "__main__":
     inputfile = os.path.join(prms.output_dir, 'gridded_densities.txt')
     estim = TruncatedGRestimator()
     estim.mmin = args.mmin
+    estim.mmax = args.mmax
     estim.load_densities(inputfile, scaling_factor=1.0)  # NB: Scaling already applied in voronoi2density.py
     estim.load_bins(prms.bins_file)
     
