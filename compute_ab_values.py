@@ -256,12 +256,12 @@ if __name__ == "__main__":
                         type=float)
 
     parser.add_argument("--mmin",
-                        help="Set the minimum magnitude used to estimate FMD parameters",
+                        help="Set the minimum magnitude of the (un-)truncated Gutenberg-Richter model for all pixels (overwrites FMD file, if provided)",
                         default=None,
                         type=float)
 
     parser.add_argument("--mmax",
-                        help="Set the maximum magnitude of the truncated Gutenberg-Richter model",
+                        help="Set the maximum magnitude of the truncated Gutenberg-Richter model for all pixels (overwrites FMD file, if provided)",
                         default=None,
                         type=float)
 
