@@ -17,8 +17,10 @@ class ParameterSet():
         self.input_epsg = None
         self.internal_epsg = None
         self.epsg_scaling2km = None
+        self.mesh_type = None  # 'regular' or 'polygons'
         self.mesh_step = None
         self.mesh_step_unit = None
+        self.mesh_file = None
         self.is_verbose = False
         self.fmd_info_file = None
         self.prior_b_info_file = None
@@ -49,6 +51,14 @@ class ParameterSet():
                 elif items[0] == 'file_for_geographical_bounds:':
                     self.bounds_file = items[1]
                     print(f'{filename}:: Load geographical bounds from file "{self.bounds_file}"')
+
+                elif items[0] == 'file_for_polygonal_cells_definition:':
+                    if self.mesh_type == 'regular':
+                        raise ValueError('Incoherent polygonal-mesh file parameter with pre-defined regular-grid discretization parameter. ' +
+                                         'Remove optional grid discretization parameter.')
+                    self.mesh_file = items[1]
+                    self.mesh_type = 'polygons'
+                    print(f'{filename}:: Load polygonal cells from file "{self.mesh_file}"')
 
                 elif items[0] == 'file_for_magnitude_bins:':
                     self.bins_file = items[1]
@@ -92,8 +102,12 @@ class ParameterSet():
                     print(f'{filename}:: Scaling coef. to convert internal coordinates in km: {self.epsg_scaling2km}')
         
                 elif items[0] == 'mesh_discretization_step:':
+                    if self.mesh_type == 'polygons':
+                        raise ValueError('Incoherent reuglar-grid discretization with pre-defined polygonal-mesh type. ' +
+                                         'Remove optional polygonal mesh file parameter.')
                     self.mesh_step = float(items[1])
                     self.mesh_step_unit = items[2]  # km or deg only!
+                    self.mesh_type = 'regular'
                     print(f'{filename}:: Zoneless grid discretization step: {self.mesh_step} {self.mesh_step_unit}')
 
                 elif items[0] == 'density_scaling_factor:':
@@ -159,8 +173,7 @@ class ParameterSet():
                         'input_epsg', 
                         'internal_epsg', 
                         'epsg_scaling2km',
-                        'mesh_step', 
-                        'mesh_step_unit'] + mandatory_fields:
+                        'mesh_type'] + mandatory_fields:
             if getattr(self, attname) is None:
                 raise_str = f'{filename}:: Missing specification for variable "{attname}". ' \
                     + 'See function lib.ioutils.load_settings().'

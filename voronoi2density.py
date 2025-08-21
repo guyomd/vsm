@@ -7,11 +7,16 @@ from tqdm import tqdm
 import time
 
 # Internal dependencies:
-from lib.ioutils import ParameterSet, load_points, load_bins, polygons_to_file
+from lib.ioutils import (ParameterSet,
+                         load_points,
+                         load_bins,
+                         polygons_to_file,
+                         load_polygons)
 from lib.geoutils import (convert_to_EPSG,
                           eqdensity_per_polygon,
                           clipped_voronoi_diagram,
                           build_mesh,
+                          mesh_from_polygons,
                           eqcounts_per_cell,
                           select_events,
                           interpolate_polygon_coords,
@@ -49,9 +54,9 @@ class VoronoiSmoothingAlgorithm:
         magbins = load_bins(self.prms.bins_file)
         return mp_epic, mp_epic_m, dates, mags, uncert, bounds, bounds_m, magbins
 
-    def build_regular_mesh(self, mesh_step_unit, bounds, bounds_m):
-        if mesh_step_unit == "km":
-            cells_m, centroids_m = build_mesh(bounds_m,
+    def build_regular_mesh(self, bounds):
+        if self.prms.mesh_step_unit == "km":
+            cells_m, centroids_m = build_mesh(bounds,  # bounds in meters
                                               self.prms.mesh_step,
                                               scaling2unit=1 / self.prms.epsg_scaling2km)
             cells = convert_to_EPSG(cells_m,
@@ -59,8 +64,8 @@ class VoronoiSmoothingAlgorithm:
                                     out_epsg=self.prms.input_epsg)
             centroids = np.array([(c.centroid.x, c.centroid.y) for c in cells.geoms])
 
-        elif mesh_step_unit == "deg":
-            cells, centroids = build_mesh(bounds,
+        elif self.prms.mesh_step_unit == "deg":
+            cells, centroids = build_mesh(bounds,  # bounds in degrees
                                           self.prms.mesh_step,
                                           scaling2unit=1.0)
             cells_m = convert_to_EPSG(cells,
@@ -68,9 +73,18 @@ class VoronoiSmoothingAlgorithm:
                                       out_epsg=self.prms.internal_epsg)
 
         else:
-            raise ValueError(f'Incorrect mesh step unit: "{mesh_step_unit}"')
-
+            raise ValueError(f'Incorrect mesh step unit: "{self.prms.mesh_step_unit}"')
         return cells, cells_m, centroids
+
+
+    def load_mesh_from_polygons(self, polygon_file, bounds):
+        pols = load_polygons(polygon_file)  # Load polygons from a GMT ASCII file
+        cells, centroids = mesh_from_polygons(pols, bounds)
+        cells_m = convert_to_EPSG(cells,
+                                  in_epsg=self.prms.input_epsg,
+                                  out_epsg=self.prms.internal_epsg)
+        return cells, cells_m, centroids
+
 
     def reset_values_for_cells_beyond_bounds(self, cells, bounds, *args):
         """
@@ -310,10 +324,17 @@ class VoronoiSmoothingAlgorithm:
         # Load input data:
         mp_epic, mp_epic_m0, dates0, mags0, uncert, bounds, bounds_m, magbins = self.load_input_data()
 
-        # Build zoneless mesh:
-        cells, cells_m, centroids = self.build_regular_mesh(self.prms.mesh_step_unit,
-                                                            bounds,
-                                                            bounds_m)
+        # Build mesh (regular for zoneless, or polygons for area-sources):
+        if self.prms.mesh_type == 'regular':
+            if self.prms.mesh_step_unit == "km":
+                bnds = bounds_m
+            elif self.prms.mesh_step_unit == "deg":
+                bnds = bounds
+            cells, cells_m, centroids = self.build_regular_mesh(bnds)
+
+        elif self.prms.mesh_type == 'polygons':
+            cells, cells_m, centroids = self.load_mesh_from_polygons(self.prms.mesh_file, bounds)
+
         nbins = magbins.shape[0]
         ncells = centroids.shape[0]
         counts = np.zeros((ncells, nbins + 2))

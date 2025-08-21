@@ -167,7 +167,20 @@ def build_mesh(bounds: Polygon, step: float, scaling2unit: float = 1.0):
     del cells
     prepare(cells_inside)
     centroids = np.array([(p.centroid.x, p.centroid.y) for p in cells_inside.geoms])
-    print(f'>> Number of cells inside bounding polygon: {len(cells_inside.geoms)}')
+    print(f'>> Number of cells intersecting bounding polygon: {len(cells_inside.geoms)}')
+    return cells_inside, centroids
+
+
+def mesh_from_polygons(polygons: MultiPolygon, bounds: Polygon):
+    xmin, ymin, xmax, ymax = bounds.bounds
+    # To make sure that mesh of polygons cover completely the bounding polygon,
+    # we define the encompassing area as a slight extension of the bounding polygon
+    # (~+1% in width/height) :
+    extbounds = bounds.buffer(np.sqrt((0.0025* (xmax-xmin)) ** 2 + (0.0025 * (ymax - ymin)) ** 2))
+    cells_inside = GeometryCollection([ pol for pol in polygons.geoms if intersects(pol, extbounds) ])
+    prepare(cells_inside)
+    centroids = np.array([(p.centroid.x, p.centroid.y) for p in cells_inside.geoms])
+    print(f'>> Number of cells intersecting bounding polygon: {len(cells_inside.geoms)}')
     return cells_inside, centroids
 
 

@@ -1,5 +1,6 @@
 file_for_epicenters: epicenters_synthetics.txt
 file_for_geographical_bounds: bounds.txt
+#file_for_polygonal_cells_definition: areasources.gmt
 file_for_magnitude_bins: bins.txt
 #file_for_FMD_limits_and_durations: fmd_info.txt
 #file_for_prior_b_information: b_prior_info.txt
