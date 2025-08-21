@@ -78,7 +78,7 @@ class VoronoiSmoothingAlgorithm:
 
 
     def load_mesh_from_polygons(self, polygon_file, bounds):
-        pols = load_polygons(polygon_file)  # Load polygons from a GMT ASCII file
+        pols, _ = load_polygons(polygon_file)  # Load polygons from a GMT ASCII file
         cells, centroids = mesh_from_polygons(pols, bounds)
         cells_m = convert_to_EPSG(cells,
                                   in_epsg=self.prms.input_epsg,
