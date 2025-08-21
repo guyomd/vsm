@@ -461,16 +461,21 @@ def load_polygons(polygon_file: str):
     zvalues = list()
     ip = -1
     for i in range(nl):
-        if lines[i].startswith('> Pol'):
+        if lines[i].startswith('#'):
+            continue
+        elif lines[i].startswith('>'):
             ip += 1
             if ip > 0:
                 # If not the first polygon, flush the current list of coordinates in a new Polygon:
                 polygons.append(Polygon(coords))
             coords = list()
-            parts = lines[i].split('-Z')
-            zvalues.append(float(parts[1]))
+            if lines[i].startswith('> Pol'): # Internal polygon numbering format
+                parts = lines[i].split('-Z')
+                zvalues.append(float(parts[1]))
+            else:  # No polygon numbering
+                zvalues.append(None)
         else:
-            pt = Point([u for u in map(float, lines[i].split('  '))])  # Point((lon, lat))
+            pt = Point([u for u in map(float, lines[i].rstrip().split())])  # Point((lon, lat))
             coords.append(pt)
 
     if ip > -1:
