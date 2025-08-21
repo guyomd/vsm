@@ -103,7 +103,7 @@ class ParameterSet():
         
                 elif items[0] == 'mesh_discretization_step:':
                     if self.mesh_type == 'polygons':
-                        raise ValueError('Incoherent reuglar-grid discretization with pre-defined polygonal-mesh type. ' +
+                        raise ValueError('Incoherent regular-grid discretization with pre-defined polygonal-mesh type. ' +
                                          'Remove optional polygonal mesh file parameter.')
                     self.mesh_step = float(items[1])
                     self.mesh_step_unit = items[2]  # km or deg only!
