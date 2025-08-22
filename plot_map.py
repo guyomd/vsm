@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from shapely import Polygon, MultiPolygon
+from shapely import Polygon, MultiPolygon, unary_union
 from argparse import ArgumentParser
 
 # Internal dependencies:
@@ -107,7 +107,15 @@ if __name__ == "__main__":
         os.mkdir(args.output_directory)
 
     # Load geographical boundaries:
-    bounding_box = load_points(prms.bounds_file)
+    if prms.bounds_file is not None:
+        # Regular grid case:
+        bounding_box = load_points(prms.bounds_file)  # returns a shapely.Polygon instance
+    else:
+        # Polygonal cells case:
+        multipol, _ = load_polygons(prms.mesh_file)
+        bounding_box = unary_union(multipol)
+        if isinstance(bounding_box, MultiPolygon):
+            raise Warning(f'Disjoint polygonal cells in file "{prms.mesh_file}". Please fix this.')
 
     # Load earthquakes epicentres, if required:
     if args.overlay_events is not None:

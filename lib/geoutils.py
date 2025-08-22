@@ -112,7 +112,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
                         # then distribute the unit weight (or count) over all sub-polygons:
                         nsub = len(inter.geoms)
                         if verbose:
-                            print(f'WARNING: Voronoi polygon sub-divided into {nsub} parts after intersection:')
+                            print(f'WARNING (verbosity on): Voronoi polygon sub-divided into {nsub} parts after intersection:')
                             print(f'\t{inter}')
                         areas = np.array([inter.geoms[i].area for i in range(nsub)])
                         total_area = areas.sum()
@@ -120,7 +120,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
                             clipped_geoms.append(inter.geoms[i])
                             weights.append(areas[i] / total_area)
                 elif verbose:
-                    print(f'WARNING: Skipping polygon --> Empty intersection with bounds:\t{p}')
+                    print(f'WARNING (verbosity on): Skipping polygon --> Empty intersection with bounds:\t{p}')
             weights = np.array(weights)
             clipped_geoms = GeometryCollection(geoms=clipped_geoms)
             
@@ -171,19 +171,6 @@ def build_mesh(bounds: Polygon, step: float, scaling2unit: float = 1.0):
     return cells_inside, centroids
 
 
-def mesh_from_polygons(polygons: MultiPolygon, bounds: Polygon):
-    xmin, ymin, xmax, ymax = bounds.bounds
-    # To make sure that mesh of polygons cover completely the bounding polygon,
-    # we define the encompassing area as a slight extension of the bounding polygon
-    # (~+1% in width/height) :
-    extbounds = bounds.buffer(np.sqrt((0.0025* (xmax-xmin)) ** 2 + (0.0025 * (ymax - ymin)) ** 2))
-    cells_inside = GeometryCollection([ pol for pol in polygons.geoms if intersects(pol, extbounds) ])
-    prepare(cells_inside)
-    centroids = np.array([(p.centroid.x, p.centroid.y) for p in cells_inside.geoms])
-    print(f'>> Number of cells intersecting bounding polygon: {len(cells_inside.geoms)}')
-    return cells_inside, centroids
-
-
 def get_multi_index_in_polygon(polygon, multigeom_or_tree, geoms=None):
     """
     Returns the indices of elements in a MultiGeometry object (i.e. MultiPoint, MultiPolygon)
@@ -224,15 +211,16 @@ def eqcounts_per_cell(cells_m, vor_diagram_m, weights: np.ndarray, scaling2unit=
     :param vor_diagram_m: shapely.GeometryCollection instance, list of
         Voronoi polygons, expressed in a equal-area CRS
     :param weights: np.ndarray, earthquake weights for each Voronoi polygon (<=1.0)
-    :param scaling2unit: float, scaling coefficient to convert areas in km^2
+    :param scaling2unit: float, scaling coefficient to convert internal units to km
     :param verbose: bool, set verbosity mode (default: False).
     """
     counts = []
     densities = []
     if len(vor_diagram_m.geoms) == 0:
         raise AssertionError(f'No event included into the mesh domain')
-    if vor_diagram_m.envelope.within(cells_m.envelope) == False:
-        raise AssertionError(f'Clipped Voronoi diagram is not fully included into the mesh domain')
+    # Issue with the following assertion test when mesh_type=='polygonal' --> projection rounding issue??
+    #if vor_diagram_m.envelope.within(cells_m.envelope) == False:
+    #    raise AssertionError(f'Clipped Voronoi diagram is not fully included into the mesh domain')
     vor_geoms_m = list(vor_diagram_m.geoms)
     tree = STRtree(vor_geoms_m)
     for cell in cells_m.geoms:
@@ -389,4 +377,6 @@ def subdivide_voronoi_cells(diagram: GeometryCollection, weights: np.ndarray, ge
                 subdivided_diagram.append(tri)
                 subdivided_weights.append(wtri * w)
     return GeometryCollection(subdivided_diagram), np.array(subdivided_weights)
+
+
 

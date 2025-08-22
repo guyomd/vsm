@@ -108,6 +108,7 @@ class ParameterSet():
                     self.mesh_step = float(items[1])
                     self.mesh_step_unit = items[2]  # km or deg only!
                     self.mesh_type = 'regular'
+                    mandatory_fields.append('bounds_file')
                     print(f'{filename}:: Zoneless grid discretization step: {self.mesh_step} {self.mesh_step_unit}')
 
                 elif items[0] == 'density_scaling_factor:':
@@ -168,7 +169,6 @@ class ParameterSet():
 
         # Defensive programming: check for missing specifications
         for attname in ['epicenters_file',
-                        'bounds_file',
                         'bins_file',
                         'input_epsg', 
                         'internal_epsg', 

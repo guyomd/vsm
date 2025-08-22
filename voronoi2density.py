@@ -1,7 +1,7 @@
 import sys
 import os
 import numpy as np
-from shapely import MultiPoint, Polygon, Point
+from shapely import MultiPolygon, MultiPoint, Polygon, Point, unary_union, make_valid
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import time
@@ -16,7 +16,6 @@ from lib.geoutils import (convert_to_EPSG,
                           eqdensity_per_polygon,
                           clipped_voronoi_diagram,
                           build_mesh,
-                          mesh_from_polygons,
                           eqcounts_per_cell,
                           select_events,
                           interpolate_polygon_coords,
@@ -34,22 +33,26 @@ class VoronoiSmoothingAlgorithm:
 
     def load_input_data(self):
         mp_epic, dates, mags, uncert = load_points(self.prms.epicenters_file)
-        bounds = load_points(self.prms.bounds_file)
+        if self.prms.bounds_file is not None:
+            bounds = load_points(self.prms.bounds_file)
+            bounds = interpolate_polygon_coords(bounds, n=1000)  # Discretize bounding polygon more finely
+        else:
+            bounds = None
 
         # Defensive programming: Check if uncertainties provided, when needed:
         if (self.prms.nb_bootstrap_samples > 0) and (uncert is None):
             raise ValueError('Bootstrap required: missing uncertainties in "{self.prms.epicenters_file}"')
 
-        # Discretize bounding polygon more finely:
-        bounds = interpolate_polygon_coords(bounds, n=1000)
-
         # Convert coordinates to metric units:
         mp_epic_m = convert_to_EPSG(mp_epic,
                                     in_epsg=self.prms.input_epsg,
                                     out_epsg=self.prms.internal_epsg)
-        bounds_m = convert_to_EPSG(bounds,
-                                   in_epsg=self.prms.input_epsg,
-                                   out_epsg=self.prms.internal_epsg)
+        if bounds is not None:
+            bounds_m = convert_to_EPSG(bounds,
+                                       in_epsg=self.prms.input_epsg,
+                                       out_epsg=self.prms.internal_epsg)
+        else:
+            bounds_m = None
 
         magbins = load_bins(self.prms.bins_file)
         return mp_epic, mp_epic_m, dates, mags, uncert, bounds, bounds_m, magbins
@@ -77,13 +80,21 @@ class VoronoiSmoothingAlgorithm:
         return cells, cells_m, centroids
 
 
-    def load_mesh_from_polygons(self, polygon_file, bounds):
-        pols, _ = load_polygons(polygon_file)  # Load polygons from a GMT ASCII file
-        cells, centroids = mesh_from_polygons(pols, bounds)
+    def load_mesh_from_polygons(self, polygon_file):
+        cells, _ = load_polygons(polygon_file)  # Load polygons from a GMT ASCII file
+        print(f'')
+        bounds = unary_union(cells)  # TODO: starting Shapely v.2.1.0, replace with shapely.disjoint_subset_union_all(...)
+        if isinstance(bounds, MultiPolygon):
+            raise Warning(f'Disjoint polygonal cells in file "{polygon_file}". Please fix this.')
+        bounds = interpolate_polygon_coords(bounds, n=1000)  # Discretize bounding polygon more finely
+        bounds_m = convert_to_EPSG(bounds,
+                                   in_epsg=self.prms.input_epsg,
+                                   out_epsg=self.prms.internal_epsg)
+        centroids = np.array([(c.centroid.x, c.centroid.y) for c in cells.geoms])
         cells_m = convert_to_EPSG(cells,
                                   in_epsg=self.prms.input_epsg,
                                   out_epsg=self.prms.internal_epsg)
-        return cells, cells_m, centroids
+        return cells, cells_m, centroids, bounds, bounds_m
 
 
     def reset_values_for_cells_beyond_bounds(self, cells, bounds, *args):
@@ -179,9 +190,12 @@ class VoronoiSmoothingAlgorithm:
                                                        weights,
                                                        scaling2unit=self.prms.epsg_scaling2km)
 
-        if np.abs(np.round(counts.sum()) - weights.sum()) > 0.01:
-            raise AssertionError(f'Total counts over the mesh domain ({counts.sum()}) differ of' +
-                                 f'more than 0.01 from the total counts in polygons ({weights.sum()})')
+        if self.prms.is_verbose:
+            print(f'(verbosity on) Sum of earthquake weights = {weights.sum()}')
+            print(f'(verbosity on) Sum of counts over the mesh domain = {counts.sum()}')
+        if np.abs(np.around(counts.sum()) - weights.sum()) > 0:
+            raise Warning(f'Total counts over the mesh domain {counts.sum()} ' +
+                          f'do not match the sum of earthquake weights {weights.sum()}')
 
         # Reset values for cells with centroids located beyond bounds:
         counts, cell_densities_km2 = self.reset_values_for_cells_beyond_bounds(cells_m,
@@ -333,7 +347,8 @@ class VoronoiSmoothingAlgorithm:
             cells, cells_m, centroids = self.build_regular_mesh(bnds)
 
         elif self.prms.mesh_type == 'polygons':
-            cells, cells_m, centroids = self.load_mesh_from_polygons(self.prms.mesh_file, bounds)
+            cells, cells_m, centroids, bounds, bounds_m = \
+                self.load_mesh_from_polygons(self.prms.mesh_file)
 
         nbins = magbins.shape[0]
         ncells = centroids.shape[0]

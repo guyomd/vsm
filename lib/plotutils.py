@@ -5,8 +5,9 @@ import sys
 from os import remove
 from math import ceil, floor
 import pygmt
-from shapely import Point, Polygon
+from shapely import Point, Polygon, MultiPolygon, MultiPoint
 import numpy as np
+from tqdm import tqdm
 
 from lib.grt_ml import cumulative_fmd
 
@@ -148,9 +149,8 @@ def map_polygons(polygons_file: str,
         y = [g.y for g in add_points.geoms]
         fig.plot(x=x,
                  y=y,
-                 style='c0.2c',
-                 pen='black',
-                 fill=None)
+                 style='c2p',
+                 fill='black')
     if clim:
         fig.colorbar(frame=f"x+l{cbar_title}")
     if savefig:
@@ -361,3 +361,41 @@ def empirical_distribution(values, nbins, bounding_polygon: Polygon, polygon: Po
     else:
         return fig
 
+
+def map_bounds_and_cells(bounds: Polygon, cells: Polygon, events: MultiPoint = None,
+                         filename='bounds_and_cells.png'):
+    x1b, y1b, x2b, y2b = bounds.bounds
+    x1c, y1c, x2c, y2c = cells.bounds
+    fig = pygmt.Figure()
+    fig.basemap(projection='M10c',
+                region=[min(x1b, x1c), max(x2b, x2c), min(y1b, y1c), max(y2b, y2c)],
+                frame='a')
+
+    if events is not None:
+        # Show events:
+        has_label = False
+        xe = [e.x for e in events.geoms]
+        ye = [e.y for e in events.geoms]
+        if not has_label:
+            labelstr = 'events'
+            has_label = True
+        else:
+            labelstr = None
+        fig.plot(x=xe, y=ye, style='p2p', fill='gray', label=labelstr)
+
+    has_label = False
+    for c in tqdm(cells.geoms):
+        xc, yc = c.exterior.xy
+        if not has_label:
+            labelstr = f"cells (area: {cells.area})"
+            has_label = True
+        else:
+            labelstr = None
+        fig.plot(x=xc, y=yc, pen="1p,black,solid", label=labelstr, close=True)
+
+    xb, yb = bounds.exterior.xy
+    fig.plot(x=xc, y=yc, pen="1p,red,dashed", label=f"bounds (area: {bounds.area})", close=True)
+
+    fig.legend()
+    fig.savefig(filename)
+    print(f'Figure of bounds and cells saved in {filename}')
