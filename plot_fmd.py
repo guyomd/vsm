@@ -80,7 +80,7 @@ if __name__ == "__main__":
         estim.bin_durations = np.tile(estim.bins['durations'].reshape((1, estim.nbins)),
                                             (estim.ncells, 1))
 
-    # Plot FMDs for all pixels requested:    
+    # Plot FMDs for all pixels:
     for indx in args.index:
             centroid = Point(xy[indx, :].tolist())
             print(f">> Plot FMD for pixel {indx} ({centroid.x}, {centroid.y})")
