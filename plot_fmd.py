@@ -1,12 +1,12 @@
 import os
 import glob
 import numpy as np
-from shapely import Point, Polygon
+from shapely import Point, Polygon, MultiPolygon, unary_union
 from argparse import ArgumentParser
 
 # Internal dependencies:
 from lib.plotutils import fmd_histogram
-from lib.ioutils import ParameterSet, load_points, load_bins, minmax_in_polygon_file
+from lib.ioutils import ParameterSet, load_points, load_bins, minmax_in_polygon_file, load_polygons
 from compute_ab_values import TruncatedGRestimator
 
 
@@ -50,7 +50,16 @@ if __name__ == "__main__":
         os.mkdir(args.output_directory)
 
     # Load geographical boundaries:
-    envelope = load_points(prms.bounds_file)
+    if prms.bounds_file is not None:
+        # Regular grid case:
+        envelope = load_points(prms.bounds_file)  # returns a shapely.Polygon instance
+    else:
+        # Polygonal cells case:
+        multipol, _ = load_polygons(prms.mesh_file)
+        envelope = unary_union(multipol)
+        if isinstance(envelope, MultiPolygon):
+            raise Warning(f'Disjoint polygonal cells in file "{prms.mesh_file}". Please fix this.')
+
            
     # Load seismicity rates and truncated G-R parameters:
     inputfile = os.path.join(prms.output_dir, 'gridded_densities.txt')
