@@ -245,8 +245,7 @@ if __name__ == "__main__":
                         help="Configuration file")
 
     parser.add_argument("-b", "--b-prior",
-                        help="Specify homogeneous prior on b (mean, std. dev.) over the spatial domain. " +
-                             "Supercedes global priors set using option '--pl-parameters' if method PL is used (-m)",
+                        help="Specify homogeneous prior on b (mean, std. dev.) over the spatial domain.",
                         nargs=2,
                         type=float)
 
