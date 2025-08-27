@@ -92,6 +92,9 @@ if __name__ == "__main__":
         a = _set_value_if_not_nan(grt_prms[indx, 2])
         b = _set_value_if_not_nan(grt_prms[indx, 3])
         da = _set_value_if_not_nan(grt_prms[indx, 4])
+        db = _set_value_if_not_nan(grt_prms[indx, 5])
+        rho = _set_value_if_not_nan(grt_prms[indx, 6])
+        mc = _set_value_if_not_nan(grt_prms[indx, 7])
 
         if np.isinf(a):
             a = None
@@ -122,6 +125,7 @@ if __name__ == "__main__":
                       a=a,
                       b=b,
                       da=da,
+                      modelmc=mc,
                       show_inset=True,
                       mmax=mmax,
                       savefig=os.path.join(args.output_directory, f"fmd_pixel_{indx}.png"),

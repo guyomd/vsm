@@ -163,7 +163,7 @@ def map_polygons(polygons_file: str,
     
 
 def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, centroid_or_polygon: Point,
-             a=None, b=None, da=None, show_inset=False, mmax=None, savefig=True, showgrid=True):
+             a=None, b=None, da=None, modelmc=None, show_inset=False, mmax=None, savefig=True, showgrid=True):
     """
     Plot the magnitude-frequency distribution for a single pixel of the zoneless model.
 
@@ -175,6 +175,8 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, centroid_o
     :param a, b: float, optional, provide Gutenberg-Richter parameters to superimpose a model on observations.
         Specify a and b values, implies to set "normalized_rates" as True.
     :param da: float, uncertainty on parameter a
+    :param modelmc: float, completeness threshold used to estimate (a,b) values. If not None, FMD model
+        will be truncated from MODELMC to max(MAXMAGS)
     :param show_inset: bool, specify whether to plot current polygon location in inset, or not.
     :param mmax: Optional, None or float, specify whether FMD should be truncated (if float), and
         at which value to truncate. 
@@ -215,6 +217,12 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, centroid_o
               np.power(10, np.log10(cumulative[:imax].min()) - 1),
               np.power(10, np.log10(cumulative[:imax].max()) + 1)]
 
+    if modelmc:
+        # Truncated FMD model curve:
+        imin = np.where(minmags >= modelmc)[0][0]
+    else:
+        imin = 0
+
     if showgrid:
         plot_frame = ['xag+lMagnitude', 
                       'ya1f3g3+l"Annual rate of exceedance"',
@@ -237,10 +245,10 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, centroid_o
     fig.plot(x=minmags, y=cumulative, style=f'c8p', fill='red', label='cumulative')  # Cumulative FMD
     if draw_model:
         if da:
-            fig.plot(x=minmags, y=model_lower, pen="thinner,black,.")
-            fig.plot(x=minmags, y=model_upper, pen="thinner,black,.")
+            fig.plot(x=minmags[imin:], y=model_lower[imin:], pen="thinner,black,.")
+            fig.plot(x=minmags[imin:], y=model_upper[imin:], pen="thinner,black,.")
         #fig.plot(x=minmags0, y=model, pen="thick,black,-", label=f'a={a:.2f} b={b:.2f}')
-        fig.plot(x=minmags, y=model, pen="thick,black,solid", label=f'a={a:.2f} b={b:.2f}')
+        fig.plot(x=minmags[imin:], y=model[imin:], pen="thick,black,solid", label=f'a={a:.2f} b={b:.2f}')
         fig.legend()
 
     if show_inset:
