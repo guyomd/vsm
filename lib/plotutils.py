@@ -162,7 +162,7 @@ def map_polygons(polygons_file: str,
         fig.show()
     
 
-def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, pixel_centroid: Point, 
+def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, centroid_or_polygon: Point,
              a=None, b=None, da=None, show_inset=False, mmax=None, savefig=True, showgrid=True):
     """
     Plot the magnitude-frequency distribution for a single pixel of the zoneless model.
@@ -171,7 +171,7 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, pixel_cent
     :param maxmags: np.ndarray, maximum bounds of each magnitude bin
     :param rates: np.ndarray, earthquake rate in each magnitude bin (non-cumulative)
     :param bounding_polygon: shapely.Polygon, bounding polygon
-    :param pixel_centroid: shapely.Point, Centroid of current pixel
+    :param centroid_or_polygon: shapely.Point or shapely.Polygon, Cell centroid or area
     :param a, b: float, optional, provide Gutenberg-Richter parameters to superimpose a model on observations.
         Specify a and b values, implies to set "normalized_rates" as True.
     :param da: float, uncertainty on parameter a
@@ -233,7 +233,8 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, pixel_cent
     fig.basemap(projection="X10c/10cl",   # Linear-Log projection
                 region=bounds, 
                 frame=plot_frame)
-    fig.plot(x=minmags, y=cumulative, style=f'c8p', fill='red')
+    fig.plot(x=minmags, y=incremental, style=f'c6p', pen='red', label='incremental')  # Incremental FMD
+    fig.plot(x=minmags, y=cumulative, style=f'c8p', fill='red', label='cumulative')  # Cumulative FMD
     if draw_model:
         if da:
             fig.plot(x=minmags, y=model_lower, pen="thinner,black,.")
@@ -254,11 +255,19 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, pixel_cent
                 resolution="i",
                 water="white")
  
-            fig.plot(x=pixel_centroid.x,
-                     y=pixel_centroid.y,
-                     style="s0.1c",
-                     pen="0.2p,black,solid",
-                     fill="red")
+            if isinstance(centroid_or_polygon, Point):
+                fig.plot(x=centroid_or_polygon.x,
+                         y=centroid_or_polygon.y,
+                         style="s0.1c",
+                         pen="0.2p,black,solid",
+                         fill="red")
+            elif isinstance(centroid_or_polygon, Polygon):
+                xx, yy = centroid_or_polygon.exterior.coords.xy
+                fig.plot(x=xx,
+                         y=yy,
+                         close=True,
+                         pen="0.2p,black,solid",
+                         fill="red")
 
     if savefig:
         fig.savefig(filename)

@@ -82,45 +82,50 @@ if __name__ == "__main__":
 
     # Plot FMDs for all pixels:
     for indx in args.index:
-            centroid = Point(xy[indx, :].tolist())
+        if prms.bounds_file is not None:
+            cellgeom = Point(xy[indx, :].tolist())
             print(f">> Plot FMD for pixel {indx} ({centroid.x}, {centroid.y})")
-            a = _set_value_if_not_nan(grt_prms[indx, 2])
-            b = _set_value_if_not_nan(grt_prms[indx, 3])
-            da = _set_value_if_not_nan(grt_prms[indx, 4])
+        else:
+            cellgeom = multipol.geoms[indx]
+            print(f">> Plot FMD for polygonal cell {indx}")
 
-            if np.isinf(a):
-                a = None
-                b = None
-                da = None
-                print(f'Warning: Infinite a-value detected. Do not plot FMD model.')
+        a = _set_value_if_not_nan(grt_prms[indx, 2])
+        b = _set_value_if_not_nan(grt_prms[indx, 3])
+        da = _set_value_if_not_nan(grt_prms[indx, 4])
 
-            if prms.fmd_info_file:
-                mmax = _set_value_if_not_nan(estim.cellinfo[indx, 3], additional_condition=lambda x: x > 0)
-            else:
-                mmax = None
+        if np.isinf(a):
+            a = None
+            b = None
+            da = None
+            print(f'Warning: Infinite a-value detected. Do not plot FMD model.')
 
-            # Reconstruct annual seismicity rates for the current cell (normalized to scaling area):
-            cell_intensities = np.reshape(estim.densities[indx, 2:], (estim.nbins, ))
-            cell_durations = np.reshape(estim.bin_durations[indx, :], (estim.nbins,))
+        if prms.fmd_info_file:
+            mmax = _set_value_if_not_nan(estim.cellinfo[indx, 3], additional_condition=lambda x: x > 0)
+        else:
+            mmax = None
 
-            # Remove unused bins (with durations <= 0):
-            ib = (estim.bin_durations[indx, :] > 0)
-            if np.all(cell_intensities == 0):
-                print(f'Error: Event counts equal to 0 in every magnitude bin. Skipping.')
-                continue
+        # Reconstruct annual seismicity rates for the current cell (normalized to scaling area):
+        cell_intensities = np.reshape(estim.densities[indx, 2:], (estim.nbins, ))
+        cell_durations = np.reshape(estim.bin_durations[indx, :], (estim.nbins,))
 
-            fmd_histogram(minmags[ib],
-                          maxmags[ib],
-                          cell_intensities[ib] / cell_durations[ib],
-                          envelope,
-                          centroid,
-                          a=a, 
-                          b=b,
-                          da=da,
-                          show_inset=True, 
-                          mmax=mmax, 
-                          savefig=os.path.join(args.output_directory, f"fmd_pixel_{indx}.png"),
-                          showgrid=args.showgrid)
+        # Remove unused bins (with durations <= 0):
+        ib = (estim.bin_durations[indx, :] > 0)
+        if np.all(cell_intensities == 0):
+            print(f'Error: Event counts equal to 0 in every magnitude bin. Skipping.')
+            continue
+
+        fmd_histogram(minmags[ib],
+                      maxmags[ib],
+                      cell_intensities[ib] / cell_durations[ib],
+                      envelope,
+                      cellgeom,
+                      a=a,
+                      b=b,
+                      da=da,
+                      show_inset=True,
+                      mmax=mmax,
+                      savefig=os.path.join(args.output_directory, f"fmd_pixel_{indx}.png"),
+                      showgrid=args.showgrid)
         
             
 
