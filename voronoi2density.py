@@ -191,8 +191,8 @@ class VoronoiSmoothingAlgorithm:
                                                        scaling2unit=self.prms.epsg_scaling2km)
 
         if self.prms.is_verbose:
-            print(f'(verbosity on) Sum of earthquake weights = {weights.sum()}')
-            print(f'(verbosity on) Sum of counts over the mesh domain = {counts.sum()}')
+            print(f'Sum of earthquake weights = {weights.sum()}')
+            print(f'Sum of counts over the mesh domain = {counts.sum()}')
         if np.abs(np.around(counts.sum()) - weights.sum()) > 0:
             raise Warning(f'Total counts over the mesh domain {counts.sum()} ' +
                           f'do not match the sum of earthquake weights {weights.sum()}')

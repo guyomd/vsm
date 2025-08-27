@@ -96,10 +96,12 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
                     # Simplify Polygon when it intersects itself:
                     if verbose:
                         print('WARNING: Make polygon valid in method "clipped_voronoi_diagram()"')
-                        print(f'\tBEFORE: {p}')
-                    p = make_valid(p) 
+                        #print(f'\tBEFORE: {p}')
+                    p = make_valid(p)
+                    """
                     if verbose: 
                         print(f'\tAFTER: {p}')
+                    """
 
                 if intersects(p, bounds):
                     inter = intersection(p, bounds)
@@ -112,8 +114,8 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
                         # then distribute the unit weight (or count) over all sub-polygons:
                         nsub = len(inter.geoms)
                         if verbose:
-                            print(f'WARNING (verbosity on): Voronoi polygon sub-divided into {nsub} parts after intersection:')
-                            print(f'\t{inter}')
+                            print(f'WARNING (verbosity on): Voronoi polygon sub-divided into {nsub} parts after intersection')
+                            #print(f'\t{inter}')
                         areas = np.array([inter.geoms[i].area for i in range(nsub)])
                         total_area = areas.sum()
                         for i in range(nsub):
