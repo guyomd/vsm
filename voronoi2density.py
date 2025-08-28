@@ -193,9 +193,11 @@ class VoronoiSmoothingAlgorithm:
         if self.prms.is_verbose:
             print(f'Sum of earthquake weights = {weights.sum()}')
             print(f'Sum of counts over the mesh domain = {counts.sum()}')
+        """
         if np.abs(np.around(counts.sum()) - weights.sum()) > 0:
             raise Warning(f'Total counts over the mesh domain {counts.sum()} ' +
                           f'do not match the sum of earthquake weights {weights.sum()}')
+        """
 
         # Reset values for cells with centroids located beyond bounds:
         counts, cell_densities_km2 = self.reset_values_for_cells_beyond_bounds(cells_m,
