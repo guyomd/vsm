@@ -137,7 +137,7 @@ class TruncatedGRestimator():
             mmax = self.cellinfo[i, 3]
 
             # Eventually, remove unused bins (with durations <= 0):
-            ib = (self.bin_durations[i, :] > 0)
+            ib = (self.bin_durations[i, :] > 0) & (self.bins['mins'] >= mmin)
             cell_intensities = cell_intensities[ib]
             cell_durations = cell_durations[ib]
             cell_mmid = self.bins['mids'][ib]
@@ -145,17 +145,17 @@ class TruncatedGRestimator():
             # Eventually, define automatically the completeness threshold:
             if auto_mc:
                 imc = cell_intensities.argmax()
-                mc = self.bins['mids'][imc] - dm / 2
+                mc = cell_mmid[imc] - dm / 2
             else:
-                imc = np.where(self.bins['mids'] - dm / 2 >= mmin)[0][0]
+                imc = np.where(cell_mmid - dm / 2 >= mmin)[0][0]
                 mc = mmin
 
             ll = Dutfoy2020_Estimator(cell_mmid[imc:],
-                                          cell_durations[imc:],
-                                          cell_intensities[imc:],
-                                          mc,
-                                          mmax,
-                                          dm)
+                                      cell_durations[imc:],
+                                      cell_intensities[imc:],
+                                      mc,
+                                      mmax,
+                                      dm)
 
             def ab_estimation_method(*input_args, bounds_b=None):
                 if (len(input_args) == 0) and (bounds_b is None):
