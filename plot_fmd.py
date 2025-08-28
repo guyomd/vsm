@@ -25,7 +25,7 @@ if __name__ == "__main__":
                         help="Configuration file")
 
     parser.add_argument("index",
-                        help="Cell indices",
+                        help="Cell indices (starting index at 1)",
                         nargs='+',
                         type=int)
     
@@ -81,7 +81,8 @@ if __name__ == "__main__":
                                             (estim.ncells, 1))
 
     # Plot FMDs for all pixels:
-    for indx in args.index:
+    indices = [i - 1 for i in args.index]  # Transform 1-based indices into 0-based indices
+    for indx in indices:
         if prms.bounds_file is not None:
             cellgeom = Point(xy[indx, :].tolist())
             print(f">> Plot FMD for pixel {indx} ({centroid.x}, {centroid.y})")
