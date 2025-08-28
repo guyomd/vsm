@@ -129,7 +129,7 @@ if __name__ == "__main__":
                       modelmc=mc,
                       show_inset=True,
                       mmax=mmax,
-                      savefig=os.path.join(args.output_directory, f"fmd_pixel_{indx}.png"),
+                      savefig=os.path.join(args.output_directory, f"fmd_pixel_{indx + 1}.png"),
                       showgrid=args.showgrid)
         
             
