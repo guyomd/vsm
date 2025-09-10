@@ -329,6 +329,7 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
             print(f'{fmd_file}:: Specified bin durations will supercede those given in "{mbins_file}"')
             loaded_params = 'Mmin, Mmax and bin durations'
 
+        mmin_mesg_displayed = False
         for i in range(ncells):
             j = np.where((np.abs(gridinfo[:, 0] - lons[i]) < coord_precision) & \
                          (np.abs(gridinfo[:, 1] - lats[i]) < coord_precision) )[0]
@@ -346,7 +347,9 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
             if mmin is None:
                 cellinfo[i, 2] = gridinfo[j, 2]  # Copy Mmin values
             else:
-                print(f'{fmd_file}:: Overwrite MMIN with the value given in command-line ({mmin:.2f})')
+                if not mmin_mesg_displayed:
+                    print(f'{fmd_file}:: Overwrite MMIN with the value given in command-line ({mmin:.2f})')
+                    mmin_mesg_displayed = True
                 cellinfo[i, 2] = mmin
 
             # Manage Mmax values:
