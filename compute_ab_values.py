@@ -10,8 +10,10 @@ from lib.ioutils import (ParameterSet,
                          load_bins, 
                          change_zvalue_in_polygon_file,
                          load_grid,
-                         load_fmd_file)
+                         load_fmd_file,
+                         load_polygons)
 from lib.grt_ml import Dutfoy2020_Estimator
+from lib.geoutils import convert_to_EPSG
 
 COORD_PRECISION = 1E-6  # Precision used for the comparison of cell coordinates
 
@@ -43,11 +45,24 @@ class TruncatedGRestimator():
         self.mmin = None
         self.mmax = None
 
-    def load_densities(self, filename, scaling_factor=1.0):
+    def load_densities(self, filename, scaling_factor=1.0, rescale_to_polygons_areas=None):
+        """
+        Load densities from input file and eventually apply scaling to density values
+
+        :param filename, str: path to the density file
+        :poram scaling_factor, float: constant multiplicative scaling value applied to loaded densities values
+        :param rescale_to_polygons_areas, None or numpy.ndarray, if not None, cell-wise multiplicative density scaling factor
+        """
         self.file_densities = filename
         self.densities, self.ncells, self.nbins, self.bin_ids = load_grid(
             self.file_densities,
             scaling_factor=scaling_factor)
+        nl, nc = self.densities.shape
+        if rescale_to_polygons_areas is None:
+            areas = np.ones((nl, nc - 2))
+        else:
+            areas = np.tile(np.reshape(rescale_to_polygons_areas, (-1, 1)), (1, nc - 2))
+        self.densities[:, 2:] *= areas
 
     def load_bins(self, filename):
         self.file_bins = filename
@@ -249,6 +264,12 @@ if __name__ == "__main__":
                         nargs=2,
                         type=float)
 
+    parser.add_argument("-s", "--rescale-to-cell-area",
+                        help='If set, rescale densities (and a-values) to each cell/polygon area. ' \
+                             + 'Otherwise, keep parameters scaled to the fixed area (in km^2) ' \
+                             + 'given in parameter "density_scaling_factor".',
+                        action='store_true')
+
     parser.add_argument("--b-truncation",
                         help="Set lower and upper truncation for b-values",
                         nargs=2,
@@ -275,7 +296,17 @@ if __name__ == "__main__":
     estim = TruncatedGRestimator()
     estim.mmin = args.mmin
     estim.mmax = args.mmax
-    estim.load_densities(inputfile, scaling_factor=1.0)  # NB: Scaling already applied in voronoi2density.py
+    if args.rescale_to_cell_area:
+        pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
+        pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
+        polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+        area_scaling = 1 / prms.density_scaling_factor
+    else:
+        area_scaling = 1.0
+        polareas = None
+    estim.load_densities(inputfile,
+                         scaling_factor=area_scaling,
+                         rescale_to_polygons_areas=polareas)
     estim.load_bins(prms.bins_file)
     
     # Load FMD information (Mmin, Mmax, and optionally bin durations):

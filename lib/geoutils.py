@@ -25,7 +25,7 @@ from shapely.errors import GEOSException
 
 
 ## COORDINATE PROJECTION FUNCTIONS: ###########################################
-def convert_to_EPSG(geom, in_epsg="EPSG:4326", out_epsg="EPSG=32618"):
+def convert_to_EPSG(geom, in_epsg="EPSG:4326", out_epsg="EPSG=8857"):
     """
     Convert geographical coordinates in a shapely Geometry to
     another map projection
