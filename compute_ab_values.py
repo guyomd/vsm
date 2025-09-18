@@ -33,6 +33,7 @@ class TruncatedGRestimator():
         self.file_GMT_mmax = None
         self.file_GMT_mc = None
         self.densities = None
+        self.areas = None
         self.ncells = None
         self.nbins = None
         self.bins = None
@@ -188,7 +189,7 @@ class TruncatedGRestimator():
                 if ((bmean == -9.0) and (bstd == -9.0)) or ((bmean == 0.0) and (bstd == 0.0)):
                     # Identified a flag indicating the absence of prior for this cell:
                     if skip_missing_priors:
-                        self.grt_params[i, :] = np.array([lon, lat] + [np.nan] * 6)
+                        self.grt_params[i, :] = np.array([lon, lat] + [np.nan] * 7)
                         continue
                     else:
                         #a, b, rho, cov = ll.find_optimal_ab_no_prior()
@@ -201,14 +202,14 @@ class TruncatedGRestimator():
                 a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
             stdb = np.sqrt(cov[0, 0])
             stda = np.sqrt(cov[1, 1])
-            self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc])
+            self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, self.areas[i]])
 
 
     def run(self, options, print_warnings=False, b_truncation=None):
         """
         Evaluate a and b parameters of the truncated GR relationship in each cell
         """
-        self.grt_params = np.zeros((self.ncells, 8))
+        self.grt_params = np.zeros((self.ncells, 9))
         if print_warnings:
             print(f'Warning !! Constant width is assumed for FMD bins in each cell (but can vary cell-wise)')
 
@@ -223,7 +224,7 @@ class TruncatedGRestimator():
         self.file_csv = filename
         np.savetxt(filename,
                    self.grt_params, 
-                   header='; '.join(['lon', 'lat', 'a', 'b', 'da', 'db', 'rho_ab', 'mc']),
+                   header='; '.join(['lon', 'lat', 'a', 'b', 'da', 'db', 'rho_ab', 'mc', 'area_in_km2']),
                    delimiter='; ')
         print(f'{filename}:: saved Gutenberg-Richter parameters for {self.ncells} cells')
     
@@ -301,9 +302,11 @@ if __name__ == "__main__":
         pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
         polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
         area_scaling = 1 / prms.density_scaling_factor
+        estim.areas = polareas
     else:
         area_scaling = 1.0
         polareas = None
+        estim.areas = prms.density_scaling_factor * np.ones((estim.ncells,))
     estim.load_densities(inputfile,
                          scaling_factor=area_scaling,
                          rescale_to_polygons_areas=polareas)
