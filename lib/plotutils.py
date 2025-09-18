@@ -225,11 +225,11 @@ def fmd_histogram(minmags, maxmags, rates, bounding_polygon: Polygon, centroid_o
 
     if showgrid:
         plot_frame = ['xag+lMagnitude', 
-                      'ya1f3g3+l"Annual rate of exceedance"',
+                      'ya1f3g3+lAnnual rate of exceedance',
                       f'WSne']
     else:
         plot_frame = ['xa+lMagnitude', 
-                      'ya1f3+l"Annual rate of exceedance"',
+                      'ya1f3+lAnnual rate of exceedance',
                       f'WSne']
 
     filename = "mfd.png"

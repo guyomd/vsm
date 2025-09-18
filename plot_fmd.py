@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 # Internal dependencies:
 from lib.plotutils import fmd_histogram
 from lib.ioutils import ParameterSet, load_points, load_bins, minmax_in_polygon_file, load_polygons
+from lib.geoutils import convert_to_EPSG
 from compute_ab_values import TruncatedGRestimator
 
 
@@ -37,6 +38,12 @@ if __name__ == "__main__":
                         help="Output directory for figures",
                         default=None)
 
+    parser.add_argument("-s", "--rescale-to-cell-area",
+                        help='If set, rescale densities (and a-values) to each cell/polygon area. ' \
+                             + 'Otherwise, keep parameters scaled to the fixed area (in km^2) ' \
+                             + 'given in parameter "density_scaling_factor".',
+                        action='store_true')
+
     args = parser.parse_args()
     
     # Load parameters:
@@ -64,7 +71,17 @@ if __name__ == "__main__":
     # Load seismicity rates and truncated G-R parameters:
     inputfile = os.path.join(prms.output_dir, 'gridded_densities.txt')
     estim = TruncatedGRestimator()
-    estim.load_densities(inputfile, scaling_factor=1.0)  # NB: Scaling already applied in voronoi2density.py
+    if args.rescale_to_cell_area:
+        pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
+        pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
+        polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+        area_scaling = 1 / prms.density_scaling_factor
+    else:
+        area_scaling = 1.0
+        polareas = None
+    estim.load_densities(inputfile,
+                         scaling_factor=area_scaling,
+                         rescale_to_polygons_areas=polareas)
     estim.load_bins(prms.bins_file)
     minmags = estim.bins['mins']
     maxmags = estim.bins['maxs']
@@ -85,10 +102,10 @@ if __name__ == "__main__":
     for indx in indices:
         if prms.bounds_file is not None:
             cellgeom = Point(xy[indx, :].tolist())
-            print(f">> Plot FMD for pixel {indx} ({centroid.x}, {centroid.y})")
+            print(f">> Plot FMD for pixel {indx + 1} ({centroid.x}, {centroid.y})")
         else:
             cellgeom = multipol.geoms[indx]
-            print(f">> Plot FMD for polygonal cell {indx}")
+            print(f">> Plot FMD for polygonal cell {indx + 1}")
 
         a = _set_value_if_not_nan(grt_prms[indx, 2])
         b = _set_value_if_not_nan(grt_prms[indx, 3])
