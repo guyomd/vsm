@@ -263,11 +263,12 @@ Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise esti
 
 
 #### Produced by compute_ab_values.py ####
-
+[TO BE COMPLETED...]
 
 #### Produced by make_plots.py ####
-
+[TO BE COMPLETED...]
 
 [^1]: Gutenberg, B., and Richter, C. F., 1944, Frequency of Earthquakes in California, _Bulletin of the Seismological Society of America_, 34, 4, pp.185-188.
 [^2]: Field, E. H., 2007, Overview of the Working Group for the Development of Regional Earthquake Likelihood Models (RELM), Seismological Research Letters, 78, 1, pp.7-16
+
 
