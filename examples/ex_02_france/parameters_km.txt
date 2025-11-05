@@ -15,3 +15,8 @@ mesh_discretization_step: 10 km
 density_scaling_factor: 1E6
 skip_ab_if_missing_priors: True
 enable_verbosity: True
+nb_bootstrap_samples: 0
+save_bootstrap_realizations: False
+nb_parallel_tasks: 1
+perturb_magnitudes: True
+b_value_to_remove_bias_on_perturbed_magnitudes: 1.0

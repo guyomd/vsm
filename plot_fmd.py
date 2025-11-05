@@ -92,7 +92,7 @@ if __name__ == "__main__":
         xy = estim.cellinfo[:, :2]
     if prms.fmd_info_file:
         # Load FMD information (Mmin, Mmax, and optionally bin durations):
-        estim.load_fmd_info(prms.fmd_info_file)
+        estim.load_fmd_info(filename=prms.fmd_info_file, verbose=prms.is_verbose)
     if estim.bin_durations is None:
         estim.bin_durations = np.tile(estim.bins['durations'].reshape((1, estim.nbins)),
                                             (estim.ncells, 1))
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     for indx in indices:
         if prms.bounds_file is not None:
             cellgeom = Point(xy[indx, :].tolist())
-            print(f">> Plot FMD for pixel {indx + 1} ({centroid.x}, {centroid.y})")
+            print(f">> Plot FMD for pixel {indx + 1} ({cellgeom.x}, {cellgeom.y})")
         else:
             cellgeom = multipol.geoms[indx]
             print(f">> Plot FMD for polygonal cell {indx + 1}")
@@ -114,11 +114,11 @@ if __name__ == "__main__":
         rho = _set_value_if_not_nan(grt_prms[indx, 6])
         mc = _set_value_if_not_nan(grt_prms[indx, 7])
 
-        if np.isinf(a):
+        if (a is None) or np.isinf(a):
             a = None
             b = None
             da = None
-            print(f'Warning: Infinite a-value detected. Do not plot FMD model.')
+            print(f'Warning: Invalid a-value detected. Do not plot FMD model.')
 
         if prms.fmd_info_file:
             mmax = _set_value_if_not_nan(estim.cellinfo[indx, 3], additional_condition=lambda x: x > 0)

@@ -305,7 +305,7 @@ if __name__ == "__main__":
 
     # Define variables for Goodness-of-fit tests:
     map = SeismicityRateMap(prms, mmin, ab_file)
-    points, dates, mags, _ = load_points(prms.epicenters_file)
+    points, dates, mags, weights, _ = load_points(prms.epicenters_file)
     epicenters = MultiPoint([pt for pt, mag in zip(points.geoms, mags) if (mag >= mmin)])
 
     # Run tests:

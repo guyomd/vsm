@@ -9,7 +9,7 @@ from shapely import Point, Polygon, MultiPolygon, MultiPoint
 import numpy as np
 from tqdm import tqdm
 
-from lib.grt_ml import cumulative_fmd
+from vsm.lib.grt_ml import cumulative_fmd
 
 
 
@@ -410,8 +410,15 @@ def map_bounds_and_cells(bounds: Polygon, cells: Polygon, events: MultiPoint = N
             labelstr = None
         fig.plot(x=xc, y=yc, pen="1p,black,solid", label=labelstr, close=True)
 
-    xb, yb = bounds.exterior.xy
-    fig.plot(x=xc, y=yc, pen="1p,red,dashed", label=f"bounds (area: {bounds.area})", close=True)
+    if isinstance(bounds, MultiPolygon):
+        print(f'>> Warning: Bounding polygons divided into {len(bounds.geoms)} polygons!')
+        for bound in bounds.geoms:
+            xb, yb = bound.exterior.xy
+            fig.plot(x=xb, y=yb, pen="1p,red,dashed", label=f"bounds (area: {bound.area})", close=True)
+    else:
+        xb, yb = bounds.exterior.xy
+        fig.plot(x=xb, y=yb, pen="1p,red,dashed", label=f"bounds (area: {bounds.area})", close=True)
+
 
     fig.legend()
     fig.savefig(filename)

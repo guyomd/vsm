@@ -12,7 +12,7 @@ from lib.ioutils import (ParameterSet,
                          change_zvalue_in_polygon_file,
                          load_polygons,
                          polygons_to_file)
-from lib.geoutils import select_events
+from lib.geoutils import select_events, convert_to_EPSG
 
 
 if __name__ == "__main__":
@@ -26,6 +26,11 @@ if __name__ == "__main__":
                         help="Grids or Polygons formatted as GMT Multiple Segment Files",
                         nargs='+',
                         type=str)
+
+    parser.add_argument('-a', '--set-transparency',
+                        help="Set transparency index, from 0 (opaque) to 100",
+                        type=int,
+                        default=30)
 
     parser.add_argument('-b', '--boundaries',
                         help="Plot polygons boundaries",
@@ -72,10 +77,14 @@ if __name__ == "__main__":
                         type=float,
                         default=None)
 
-    parser.add_argument('-s', '--set-transparency',
-                        help="Set transparency index, from 0 (opaque) to 100",
-                        type=int,
-                        default=30)
+    parser.add_argument("-s", "--scale-to-reference-area",
+                        help='Scale plotted values according to formula log10(10^(value) * fixed_area / cell_area) '
+                            + 'where fixed_area is either provided (in km^2) as a command-line argument or as parameter '
+                            + '"density_scaling_factor" in the configuration file.',
+                        nargs="?",
+                        type=float,
+                        const=True,
+                        default=False)
 
     parser.add_argument("-t", "--title",
                         help="Figure title")
@@ -119,12 +128,22 @@ if __name__ == "__main__":
 
     # Load earthquakes epicentres, if required:
     if args.overlay_events is not None:
-        mp_epic, dates, mags, uncert = load_points(prms.epicenters_file)
+        mp_epic, dates, mags, weights, uncert = load_points(prms.epicenters_file)
         limits = np.array([0] + args.overlay_events)
-        mp_epic_sel, m_sel, t_sel = select_events(mp_epic, mags, dates, bounding_box, limits)
+        mp_epic_sel, m_sel, t_sel, w_sel = select_events(mp_epic, mags, dates, weights, bounding_box, limits)
         print(f'>> Overlay {len(mp_epic_sel.geoms)} epicenters with {limits[1]} <= M < {limits[2]} and {limits[3]} <= T <= {limits[4]}')
     else:
         mp_epic_sel = None
+
+    # Account for optional scaling factor:
+    if isinstance(args.scale_to_reference_area, float):
+        # Scaling area specified as command-line argument:
+        fixed_area = args.scale_to_reference_area  # in km^2
+    elif args.scale_to_reference_area is True:
+        # No command-line argument, use value stored as parameter "density_scaling_factor":
+        fixed_area = prms.density_scaling_factor  # in km^2
+    else:
+        fixed_area = None
 
     for inputfile in args.files:
         print('\n' + inputfile)
@@ -158,6 +177,17 @@ if __name__ == "__main__":
             _, zvalues = load_polygons(inputfile)
             zvalues[np.logical_not(np.isfinite(zvalues))] = np.nan
             tmpfiles.append(prefix + "_e.tmp")
+            change_zvalue_in_polygon_file(inputfile, tmpfiles[-1], zvalues)
+            inputfile = tmpfiles[-1]
+
+        # Scale Z-values for a fixed reference area:
+        if fixed_area is not None:
+            print(f'>> Scale Z-values for a reference area of {fixed_area} km^2')
+            pols, zvalues = load_polygons(inputfile)
+            pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
+            polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+            zvalues = np.log10( np.power(10, zvalues) * fixed_area / polareas )
+            tmpfiles.append(prefix + "_a.tmp")
             change_zvalue_in_polygon_file(inputfile, tmpfiles[-1], zvalues)
             inputfile = tmpfiles[-1]
 

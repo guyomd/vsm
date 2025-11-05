@@ -52,19 +52,21 @@ def eqdensity_per_polygon(polygons, weights: np.ndarray, scaling2unit=1.0, log_v
     return np.array(values)
 
 
-def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
+def clipped_voronoi_diagram(multi_pt: MultiPoint,
+                            evt_weights: np.ndarray,
+                            bounds: Polygon = None,
                             convertb4clip = None,
                             verbose=False):
     """
-    Compute a clipped Voronoi diagram clipped within the 
-    interior of the polygonal boundaries
-    :param convertb4clip: dict, specify EPSG codes for internal conversion of Voronoi polygons 
+    Compute a clipped Voronoi diagram within the interior of the bounding polygon
+    :param convertb4clip: dict, specify EPSG codes for internal conversion of Voronoi polygons
         coordinates before clipping, so that conversion to an equal-area is guaranted before 
         intersecting polygons with the bounding polygon. 
         Syntax is: convertb4clipping = {'in_epsg': str, 'out_epsg': str}
     :param verbose: bool, increase verbosity when True (default: False)
     """
-    # Compute Voronoi diagram:
+    assert len(multi_pt.geoms) == len(evt_weights)
+
     if len(multi_pt.geoms) == 1:
         # Special case when only 1 epicenter is provided in MULTI_PT:
         if convertb4clip:
@@ -74,13 +76,12 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
         else:
             polygons = GeometryCollection(geoms=[bounds])
         prepare(polygons)
-        weights = np.ones((1,))
-        return polygons, weights
+        return polygons, evt_weights
     
     else:
         # NB: Voronoi diagram must be computed using equal-area projection
-        polygons = voronoi_polygons(multi_pt)
-
+        polygons = voronoi_polygons(multi_pt, ordered=True)  # Returned polygons ordered as input MULTI_PT vertices
+        assert len(polygons.geoms) == len(multi_pt.geoms)
         if (bounds is not None) and (not polygons.is_empty):
             # If necessary, convert to the same CRS than bounds:
             if convertb4clip:
@@ -91,27 +92,22 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
             # Clip Voronoi polygons within the enclosing boundary polygon:
             clipped_geoms = []
             weights = []
-            for p in polygons.geoms:
+            for j, p in enumerate(polygons.geoms):
                 if not p.is_valid:
                     # Simplify Polygon when it intersects itself:
                     if verbose:
                         print('WARNING: Make polygon valid in method "clipped_voronoi_diagram()"')
-                        #print(f'\tBEFORE: {p}')
                     p = make_valid(p)
-                    """
-                    if verbose: 
-                        print(f'\tAFTER: {p}')
-                    """
 
                 if intersects(p, bounds):
                     inter = intersection(p, bounds)
                     if isinstance(inter, Polygon):
                         clipped_geoms.append(inter)
-                        weights.append(1.0)
+                        weights.append(evt_weights[j])
                     elif isinstance(inter, MultiPolygon):
                         # Handles the situation when a Voronoi polygon is divided
-                        # into several polygons after intersection,
-                        # then distribute the unit weight (or count) over all sub-polygons:
+                        # into several sub-polygons after intersection,
+                        # then distribute the event weight (or count) over all sub-polygons:
                         nsub = len(inter.geoms)
                         if verbose:
                             print(f'WARNING (verbosity on): Voronoi polygon sub-divided into {nsub} parts after intersection')
@@ -120,7 +116,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
                         total_area = areas.sum()
                         for i in range(nsub):
                             clipped_geoms.append(inter.geoms[i])
-                            weights.append(areas[i] / total_area)
+                            weights.append(evt_weights[j] * areas[i] / total_area)
                 elif verbose:
                     print(f'WARNING (verbosity on): Skipping polygon --> Empty intersection with bounds:\t{p}')
             weights = np.array(weights)
@@ -137,8 +133,7 @@ def clipped_voronoi_diagram(multi_pt: MultiPoint, bounds: Polygon = None,
         
         else:
             prepare(polygons)  # In-place geom preparation for performance improvement
-            weights = np.ones((len(polygons.geoms),)) 
-            return polygons, weights
+            return polygons, evt_weights
 
 
 def build_mesh(bounds: Polygon, step: float, scaling2unit: float = 1.0):
@@ -246,7 +241,7 @@ def eqcounts_per_cell(cells_m, vor_diagram_m, weights: np.ndarray, scaling2unit=
     return np.array(counts), np.array(densities)  # Cell densities
 
 
-def select_events(mp_epic: MultiPoint, mags: np.ndarray, dates: np.ndarray, polygon: Polygon, magbin: np.ndarray):
+def select_events(mp_epic: MultiPoint, mags: np.ndarray, dates: np.ndarray, weights: np.ndarray, polygon: Polygon, mtbin: np.ndarray):
     """
     Return a subset of input epicenters MP_EPIC that are located within a given 
     POLYGON, with magnitude included in a given magnitude bin and occurrence time
@@ -254,18 +249,19 @@ def select_events(mp_epic: MultiPoint, mags: np.ndarray, dates: np.ndarray, poly
     :param mp_epic: shapely.MultiPoint, earthquake epicenters
     :param mags: numpy.ndarray, earthquake magnitudes
     :param dates: numpy.ndarray, earthquake occurrence times (formatted as floats)
+    :param weights: numpy.ndarray, individual event weights
     :param polygon: shapely.Polygon, geographical bounds for event selection
-    :param magbin: numpy.ndarray, properties of a magnitude bin, formatted as
-        magbin = [index, mmin, mmax, tstart, tend]
+    :param mtbin: numpy.ndarray, properties of a magnitude bin, formatted as
+        mtbin = [index, mmin, mmax, tstart, tend]
     """
     inpolygon = np.array([polygon.contains(point) for point in mp_epic.geoms])
     isselected = np.logical_and.reduce((inpolygon, 
-                                        mags >= magbin[1], 
-                                        mags < magbin[2],
-                                        dates >= magbin[3],
-                                        dates <= magbin[4]))
+                                        mags >= mtbin[1],
+                                        mags < mtbin[2],
+                                        dates >= mtbin[3],
+                                        dates <= mtbin[4]))
     subset = MultiPoint([point for point, inselection in zip(mp_epic.geoms, isselected) if inselection])
-    return subset, mags[isselected], dates[isselected]
+    return subset, mags[isselected], dates[isselected], weights[isselected]
 
 
 def interpolate_polygon_coords(polygon: Polygon, n=1000):

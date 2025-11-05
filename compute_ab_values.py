@@ -79,7 +79,7 @@ class TruncatedGRestimator():
             print(f'{filename}:: {magbins.shape[0] - len(self.ibins)} bins missing in density file. ' +
                   f'Will only use {len(self.ibins)} bins.')
 
-    def load_fmd_info(self, filename=None):
+    def load_fmd_info(self, filename=None, verbose=True):
         """
         Load FMD information (Mmin, Mmax, and optionally bin durations)
         Format: LON; LAT; MMIN; MMAX [; BIN_1_DURATION; ...; BIN_n_DURATION]
@@ -97,9 +97,10 @@ class TruncatedGRestimator():
             ibins=self.ibins,
             mmin=self.mmin,
             mmax=self.mmax,
-            coord_precision=COORD_PRECISION)
+            coord_precision=COORD_PRECISION,
+            verbose=verbose)
 
-    def load_prior_on_b(self, filename=None, b_mean=1.0, b_std=1.0):
+    def load_prior_on_b(self, filename=None, b_mean=1.0, b_std=1.0, verbose=True):
         """
         Load a-priori information on b-value. For unspecified cells, default prior is b=1, std_b=1.
         Note:
@@ -116,7 +117,16 @@ class TruncatedGRestimator():
             for i in range(self.ncells):
                 j = np.where((np.abs(priorinfo[:, 0] - self.densities[i, 0]) < COORD_PRECISION) & \
                              (np.abs(priorinfo[:, 1] - self.densities[i, 1]) < COORD_PRECISION) )[0]
-                prior[i, :] = priorinfo[j, 2:]  # [mean_b, std_dev_b]
+                if len(j) == 0:
+                    if verbose:
+                        print(f'{filename}:: No match for cell with centroid at ' +
+                              f'({self.densities[i, 0]:.6f}; {self.densities[i, 1]}) --> Set prior b = 1.0 +/- 1.0')
+                elif len(j) > 1:
+                    raise ValueError(f'{filename}:: Found several lines ({j}) matching coordinates'
+                                     + f'({self.densities[i, 0]:.6f}; {self.densities[i, 1]}) within '
+                                     + f'given precision ({COORD_PRECISION})')
+                else:
+                    prior[i, :] = priorinfo[j, 2:]  # [mean_b, std_dev_b]
         else:
             self.file_prior_b = 'command-line'
             print(f'>> Homogeneous prior on b-values over the domain: <b> = {b_mean:.2f}, std = {b_std:.2f}')
@@ -306,23 +316,27 @@ if __name__ == "__main__":
     else:
         area_scaling = 1.0
         polareas = None
-        estim.areas = prms.density_scaling_factor * np.ones((estim.ncells,))
+
     estim.load_densities(inputfile,
                          scaling_factor=area_scaling,
-                         rescale_to_polygons_areas=polareas)
+                         rescale_to_polygons_areas=polareas)  # NB: Calling this function affects a value to variable estim.ncells
     estim.load_bins(prms.bins_file)
+
+    if not args.rescale_to_cell_area:
+        # Set an array of constant scaling-area values:
+        estim.areas = prms.density_scaling_factor * np.ones((estim.ncells,))
     
     # Load FMD information (Mmin, Mmax, and optionally bin durations):
-    estim.load_fmd_info(prms.fmd_info_file)
+    estim.load_fmd_info(filename=prms.fmd_info_file, verbose=prms.is_verbose)
 
     # Load prior information on b-value:
     if (args.b_prior is not None) and (prms.prior_b_info_file is not None):
         raise ValueError('Error: Cannot use option "-b" when "file_for_prior_b_information" ' +
                          'is already specified in configuration file')
     elif prms.prior_b_info_file is not None:
-        estim.load_prior_on_b(filename=prms.prior_b_info_file)
+        estim.load_prior_on_b(filename=prms.prior_b_info_file, verbose=prms.is_verbose)
     elif isinstance(args.b_prior, list):
-        estim.load_prior_on_b(b_mean=args.b_prior[0], b_std=args.b_prior[1])
+        estim.load_prior_on_b(b_mean=args.b_prior[0], b_std=args.b_prior[1], verbose=is_verbose)
     else:
         # No prior on b-values:
         print('>> No prior for b-values over the domain')

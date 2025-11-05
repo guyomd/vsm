@@ -207,7 +207,9 @@ def load_points(filename):
     - Polygons: one vertex per line, two columns: lon, lat
     - Points/Epicenters: one epicenter per line, 4 or 8 columns
         * 4 columns format: floating date, lon, lat, magnitude
+        * 5 columns format: equiv. 4 columns format + event weights
         * 8 columns format: floating date, lon, lat, mag, loc_unc_smaj_km, loc_unc_smin_km, loc_unc_az, mag_unc
+        * 9 columns format: equiv. 8 columns format + event weights
     """
     def _check_polygon_validity(p):
         if not p.is_valid:
@@ -217,35 +219,51 @@ def load_points(filename):
 
     A = np.loadtxt(filename, comments='#')
     npts, ncols = A.shape
-    if ncols == 2:
-        # For polygon:
+    if ncols == 2:  # 2-columns format for POLYGONS (one vertexe per line): lon, lat
         print(f'{filename}:: Loaded polygon with {npts} vertices')
         geom = Polygon(A)
         _check_polygon_validity(geom)
         return geom
 
-    elif ncols == 4:
-        # For epicenters:
+    elif ncols == 4:  # 4-columns format for EPICENTERS: floating date, lon, lat, magnitude
         # NB: small perturbations added to coordinates to avoid duplicates:
-        print(f'{filename}:: Loaded {npts} epicenters (no uncertainties)')
+        print(f'{filename}:: Loaded {npts} epicenters (no weights, no uncertainties)')
         coords = A[:, 1:3]
         m = coords.mean(axis=0)
         xe, ye = 10 ** (np.round(np.log10(np.abs(m))) - 6)
         print(f'{filename}:: Apply minor perturbation to avoid duplicates (dX = {xe}; dY = {ye})')
         coords[:, 0] += xe * (1 - 2 * np.random.random(size=npts))
         coords[:, 1] += ye * (1 - 2 * np.random.random(size=npts))
+        weights = np.ones((A.shape[0],))  # Set unit weights
         print(f'{filename}:: Longitude range = [{coords[:, 0].min()}; {coords[:, 0].max()}]')
         print(f'{filename}:: Latitude range = [{coords[:, 1].min()}; {coords[:, 1].max()}]')
         print(f'{filename}:: Magnitude range = [{A[:, 3].min()}; {A[:, 3].max()}]')
         print(f'{filename}:: Temporal range = [{A[:, 0].min()}; {A[:, 0].max()}]')
         geom = MultiPoint(coords)
         prepare(geom)  # In-place geom preparation for MultiPoint performance improvement
-        return geom, A[:, 0], A[:, 3], None  # output: points, dates, mags
+        return geom, A[:, 0], A[:, 3], weights, None  # output: points, dates, mags, unit weights
 
-    elif ncols == 8:
-        # For epicenters with uncertainties (loc, mag):
+    elif ncols == 5:  # 5-columns format for EPICENTERS with weights: floating date, lon, lat, magnitude, weight
+        print(f'{filename}:: Loaded {npts} epicenters (weighted, no uncertainties)')
+        coords = A[:, 1:3]
+        m = coords.mean(axis=0)
+        xe, ye = 10 ** (np.round(np.log10(np.abs(m))) - 6)
         # NB: small perturbations added to coordinates to avoid duplicates:
-        print(f'{filename}:: Loaded {npts} epicenters with uncertainties (loc, mag)')
+        print(f'{filename}:: Apply minor perturbation to avoid duplicates (dX = {xe}; dY = {ye})')
+        coords[:, 0] += xe * (1 - 2 * np.random.random(size=npts))
+        coords[:, 1] += ye * (1 - 2 * np.random.random(size=npts))
+        weights = A[:, 4]
+        print(f'{filename}:: Longitude range = [{coords[:, 0].min()}; {coords[:, 0].max()}]')
+        print(f'{filename}:: Latitude range = [{coords[:, 1].min()}; {coords[:, 1].max()}]')
+        print(f'{filename}:: Magnitude range = [{A[:, 3].min()}; {A[:, 3].max()}]')
+        print(f'{filename}:: Temporal range = [{A[:, 0].min()}; {A[:, 0].max()}]')
+        print(f'{filename}:: Weighting range = [{weights.min()}; {weights.max()}]  (sum = {weights.sum()})')
+        geom = MultiPoint(coords)
+        prepare(geom)  # In-place geom preparation for MultiPoint performance improvement
+        return geom, A[:, 0], A[:, 3], weights, None  # output: points, dates, mags, weights
+
+    elif ncols == 8:  # 4-columns format for EPICENTERS with (loc, mag) uncertainties: floating date, lon, lat, mag, loc_unc_smaj_km, loc_unc_smin_km, loc_unc_az, mag_unc
+        print(f'{filename}:: Loaded {npts} epicenters (with loc. & mag. uncertainties, no weights)')
         coords = A[:, 1:3]
         uncert = {'loc_smaj': A[:, 4],  # Major semi-axis length in km for the ellipsoidal uncertainty
                   'loc_smin': A[:, 5],  # Minor semi-axis length in km for the ellipsoidal uncertainty
@@ -254,9 +272,11 @@ def load_points(filename):
                   }
         m = coords.mean(axis=0)
         xe, ye = 10 ** (np.round(np.log10(np.abs(m))) - 6)
+        # NB: small perturbations added to coordinates to avoid duplicates:
         print(f'{filename}:: Apply minor perturbation to avoid duplicates (dX = {xe}; dY = {ye})')
         coords[:,0] += xe * (1 - 2 * np.random.random(size=npts))
         coords[:,1] += ye * (1 - 2 * np.random.random(size=npts))
+        weights = np.ones((A.shape[0],))  # Set unit weights
         print(f'{filename}:: Longitude range = [{coords[:,0].min()}; {coords[:,0].max()}]')
         print(f'{filename}:: Latitude range = [{coords[:,1].min()}; {coords[:,1].max()}]')
         print(f"{filename}:: Major semi-axis length range = [{uncert['loc_smaj'].min()}; {uncert['loc_smaj'].max()}] km")
@@ -267,7 +287,35 @@ def load_points(filename):
         print(f'{filename}:: Temporal range = [{A[:,0].min()}; {A[:,0].max()}]')
         geom = MultiPoint(coords)
         prepare(geom)  # In-place geom preparation for MultiPoint performance improvement
-        return geom, A[:,0], A[:,3], uncert   # output: points, dates, mags
+        return geom, A[:,0], A[:,3], weights, uncert   # output: points, dates, mags, unit weights, uncertainties
+
+    elif ncols == 9:  # 4-columns format for EPICENTERS with weights and uncertainties: floating date, lon, lat, mag, loc_unc_smaj_km, loc_unc_smin_km, loc_unc_az, mag_unc, weights
+        print(f'{filename}:: Loaded {npts} epicenters (with loc. & mag. uncertainties, and weights)')
+        coords = A[:, 1:3]
+        uncert = {'loc_smaj': A[:, 4],  # Major semi-axis length in km for the ellipsoidal uncertainty
+                  'loc_smin': A[:, 5],  # Minor semi-axis length in km for the ellipsoidal uncertainty
+                  'loc_az': A[:, 6],  # Major semi-axis orientation from North, in degrees
+                  'mag_unc': A[:, 7]  # Magnitude uncertainty
+                  }
+        m = coords.mean(axis=0)
+        xe, ye = 10 ** (np.round(np.log10(np.abs(m))) - 6)
+        # NB: small perturbations added to coordinates to avoid duplicates:
+        print(f'{filename}:: Apply minor perturbation to avoid duplicates (dX = {xe}; dY = {ye})')
+        coords[:,0] += xe * (1 - 2 * np.random.random(size=npts))
+        coords[:,1] += ye * (1 - 2 * np.random.random(size=npts))
+        weights = A[:, 8]
+        print(f'{filename}:: Longitude range = [{coords[:,0].min()}; {coords[:,0].max()}]')
+        print(f'{filename}:: Latitude range = [{coords[:,1].min()}; {coords[:,1].max()}]')
+        print(f"{filename}:: Major semi-axis length range = [{uncert['loc_smaj'].min()}; {uncert['loc_smaj'].max()}] km")
+        print(f"{filename}:: Minor semi-axis length range = [{uncert['loc_smin'].min()}; {uncert['loc_smin'].max()}] km")
+        print(f"{filename}:: Major semi-axis azimuth range = [{uncert['loc_az'].min()}; {uncert['loc_az'].max()}] deg.")
+        print(f'{filename}:: Magnitude range = [{A[:,3].min()}; {A[:,3].max()}]')
+        print(f"{filename}:: Magnitude uncertainty range = [{uncert['mag_unc'].min()}; {uncert['mag_unc'].max()}]")
+        print(f'{filename}:: Temporal range = [{A[:,0].min()}; {A[:,0].max()}]')
+        print(f'{filename}:: Weighting range = [{weights.min()}; {weights.max()}]  (sum = {weights.sum()})')
+        geom = MultiPoint(coords)
+        prepare(geom)  # In-place geom preparation for MultiPoint performance improvement
+        return geom, A[:,0], A[:,3], weights, uncert   # output: points, dates, mags, weights, uncertainties
 
 def load_bins(filename):
     """
@@ -283,7 +331,8 @@ def load_bins(filename):
     return B
 
 
-def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, mmax=None, coord_precision=1E-6):
+def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, mmax=None, coord_precision=1E-6,
+                  verbose=True):
     """
     Load FMD information (Mmin, Mmax, and optionally bin durations)
     FMD_FILE Format: LON; LAT; MMIN; MMAX [; BIN_1_DURATION; ...; BIN_n_DURATION]
@@ -293,6 +342,8 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
     :param ibins: iterable, indices of magnitude-bins used in the analysis
     :param mmin: float, user-specified minimum magnitude truncation (overwrites values read from file)
     :param mmax: float, user-specified maximum magnitude truncation (overwrites values read from file)
+    :param coord_precision: float, set precision for the correspondance of coordinates between files
+    :param verbose: bool, set verbosity or not
     """
     ncells = len(lons)
     mbins = load_bins(mbins_file)
@@ -334,8 +385,9 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
             j = np.where((np.abs(gridinfo[:, 0] - lons[i]) < coord_precision) & \
                          (np.abs(gridinfo[:, 1] - lats[i]) < coord_precision) )[0]
             if len(j) == 0:
-                print(f'{fmd_file}:: Cannot find cell with coordinates ' +
-                      f'({lons[i]:.6f}; {lats[i]})')
+                if verbose:
+                    print(f'{fmd_file}:: No match for cell with centroid at ' +
+                          f'({lons[i]:.6f}; {lats[i]})')
                 continue
             elif len(j) > 1:
                 raise ValueError(f'{fmd_file}:: Found several lines with coordinates matching '
