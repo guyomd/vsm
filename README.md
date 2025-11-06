@@ -157,26 +157,29 @@ Tutorials and examples will be included to assist interested users with our inpu
   ```
 * **Earthquake catalogue** (_e.g.,_ `epicenters.txt`): Catalogue of earthquake epicentral locations with location and magnitude uncertainties.\
   One epicenter per line. Each line starting with "#" is considered as a comment and skipped.\
-  Two formats are available, depending on whether uncertainties are included in the catalogue, or not:
-  - <ins>without uncertainties</ins>, columns are arranged in the following order: `[FLOATING DATE] [LON] [LAT] [MAG]`
-  - <ins>with uncertainties</ins>, columns are arranged in the following order: `[FLOATING DATE] [LON] [LAT] [MAG] [HALF-LENGTH OF SEMI-MAJOR AXIS IN KM] [HALF-LENGTH OF SEMI-MINOR AXIS IN KM] [AZIMUTH OF SEMI-MAJOR AXIS in DEG] [MAG UNCERTAINTY]`
+  The full format contains 9 columns, organized in the following order: `[FLOATING DATE] [LON] [LAT] [MAG] [HALF-LENGTH OF SEMI-MAJOR AXIS IN KM] [HALF-LENGTH OF SEMI-MINOR AXIS IN KM] [AZIMUTH OF SEMI-MAJOR AXIS in DEG] [MAG UNCERTAINTY] [EVENT WEIGHT]`
+  
   ```
   # VSM EARTHQUAKE EPICENTERS 
   # 1 EVENT PER LINE
   # COORDINATES EXPRESSED IN GEOGRAPHICAL COORDINATES (EPSG:4326)	
-  # LINE FORMAT: Floating_Date  Longitude  Latitude  Magnitude  Loc_Unc_SMAJ  Loc_Unc_SMIN  Loc_Unc_Az  Mag_Unc
-  1522.479452	0.75	46.917	5.8	100.0	100.0	0.0	0.43
-  1579.068493	2.0	46.583	6.0	50.0	50.0	0.0	0.47
-  1580.262295	1.5	51.0	5.8	50.0	50.0	0.0	0.49
-  1618.501370	-0.617	43.2	5.1	50.0	50.0	0.0	0.48
-  1640.510929	-1.367	48.933	5.2	100.0	100.0	0.0	0.42
-  1650.720548	7.6	47.55	5.3	50.0	50.0	0.0	0.44
-  1657.123288	0.617	47.117	5.7	50.0	50.0	0.0	0.51
-  1663.035616	-0.75	46.95	5.3	100.0	100.0	0.0	0.5
-  1665.093151	-0.05	43.1	5.4	100.0	100.0	0.0	0.43
-  1672.945355	7.75	47.483	5.6	50.0	50.0	0.0	0.45
-  1678.668493	5.783	43.75	5.0	100.0	100.0	0.0	0.4
+  # LINE FORMAT: Floating_Date  Longitude  Latitude  Magnitude  Loc_Unc_SMAJ  Loc_Unc_SMIN  Loc_Unc_Az  Mag_Unc Weight
+  1522.479452	0.75	46.917	5.8	100.0	100.0	0.0	0.43 1.0
+  1579.068493	2.0	46.583	6.0	50.0	50.0	0.0	0.47 1.0
+  1580.262295	1.5	51.0	5.8	50.0	50.0	0.0	0.49 1.0
+  1618.501370	-0.617	43.2	5.1	50.0	50.0	0.0	0.48 1.0
+  1640.510929	-1.367	48.933	5.2	100.0	100.0	0.0	0.42 1.0
+  1650.720548	7.6	47.55	5.3	50.0	50.0	0.0	0.44 1.0
+  1657.123288	0.617	47.117	5.7	50.0	50.0	0.0	0.51 1.0
+  1663.035616	-0.75	46.95	5.3	100.0	100.0	0.0	0.5 1.0
+  1665.093151	-0.05	43.1	5.4	100.0	100.0	0.0	0.43 1.0
+  1672.945355	7.75	47.483	5.6	50.0	50.0	0.0	0.45 1.0
+  1678.668493	5.783	43.75	5.0	100.0	100.0	0.0	0.4 1.0
   ```
+  **NB:** Three alternative formats are available when uncertainties, or weights, are not specified in the catalogue:
+  - <ins>no uncertainties, no weights</ins>, 4-columns format, arranged in the following order: `[FLOATING DATE] [LON] [LAT] [MAG]`. This implicitely sets all weights to 1.0.
+  - <ins>with weights, but no uncertainties</ins>, 5-columns format, arranged in the following order: `[FLOATING DATE] [LON] [LAT] [MAG] [EVENT WEIGHT]`
+  - <ins>with uncertainties, but no weights</ins>, 8-columns format, arranged in the following order: `[FLOATING DATE] [LON] [LAT] [MAG] [HALF-LENGTH OF SEMI-MAJOR AXIS IN KM] [HALF-LENGTH OF SEMI-MINOR AXIS IN KM] [AZIMUTH OF SEMI-MAJOR AXIS in DEG] [MAG UNCERTAINTY]`. This implicitely sets all weights to 1.0.
    
 * **[Optional] FMD properties for each pixel** (_e.g.,_ `fmd_info.txt`): Describes the bounds and completeness periods of frequency-magnitude distributions (FMD) for each pixel defined in the grid output by the program `voronoi2density.py`. When completeness durations are specified in this file, they replace durations provided in the Magnitude Bin Configuration file, see above.
 One line per pixel, with semicolumn-delimited columns. Each line starting with "#" is considered as a comment and skipped.\
@@ -270,5 +273,6 @@ Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise esti
 
 [^1]: Gutenberg, B., and Richter, C. F., 1944, Frequency of Earthquakes in California, _Bulletin of the Seismological Society of America_, 34, 4, pp.185-188.
 [^2]: Field, E. H., 2007, Overview of the Working Group for the Development of Regional Earthquake Likelihood Models (RELM), Seismological Research Letters, 78, 1, pp.7-16
+
 
 
