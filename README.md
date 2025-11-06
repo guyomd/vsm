@@ -42,12 +42,12 @@ Tutorials and examples will be included to assist interested users with our inpu
 
 
 ### Calculation of earthquake counts/density per magnitude bin ###
-<ins>*Syntax*</ins>: `python voronoi2density.py parameters.txt`
+<ins>*Syntax*</ins>: `python voronoi2density.py [options] parameters.txt`
 > [!NOTE]
 > A full list of available options can be obtained using the `-h` flag, _i.e.,_ `python voronoi2density.py -h`.
 
 ### Estimation of (_a_, _b_) parameters of the Gutenberg & Richter law[^1] ###
-<ins>*Syntax*</ins>: `python compute_ab_values.py parameters.txt`
+<ins>*Syntax*</ins>: `python compute_ab_values.py [options] parameters.txt`
 > [!NOTE]
 > A full list of available options can be obtained using the `-h` flag, _i.e.,_ `python compute_ab_values.py -h`.
 
@@ -273,6 +273,7 @@ Storing of intermediary results (catalogue, Voronoi polygons and pixel-wise esti
 
 [^1]: Gutenberg, B., and Richter, C. F., 1944, Frequency of Earthquakes in California, _Bulletin of the Seismological Society of America_, 34, 4, pp.185-188.
 [^2]: Field, E. H., 2007, Overview of the Working Group for the Development of Regional Earthquake Likelihood Models (RELM), Seismological Research Letters, 78, 1, pp.7-16
+
 
 
 
