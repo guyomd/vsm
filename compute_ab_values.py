@@ -336,7 +336,7 @@ if __name__ == "__main__":
     elif prms.prior_b_info_file is not None:
         estim.load_prior_on_b(filename=prms.prior_b_info_file, verbose=prms.is_verbose)
     elif isinstance(args.b_prior, list):
-        estim.load_prior_on_b(b_mean=args.b_prior[0], b_std=args.b_prior[1], verbose=is_verbose)
+        estim.load_prior_on_b(b_mean=args.b_prior[0], b_std=args.b_prior[1], verbose=prms.is_verbose)
     else:
         # No prior on b-values:
         print('>> No prior for b-values over the domain')
