@@ -210,6 +210,7 @@ class TruncatedGRestimator():
             else:
                 #a, b, rho, cov = ll.find_optimal_ab_no_prior()
                 a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
+
             stdb = np.sqrt(cov[0, 0])
             stda = np.sqrt(cov[1, 1])
             self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, self.areas[i]])

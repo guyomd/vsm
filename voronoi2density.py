@@ -400,7 +400,7 @@ class VoronoiSmoothingAlgorithm:
                                                        correct_bias=True,
                                                        b_value=self.prms.b_value_for_correction_term)
                     suffix = f'_bs_{i + 1:0{bs_nz}d}'
-                    args.append([i + 1, magbins, mp_epic_m, mags, dates, bounds_m, cells, cells_m,
+                    args.append([i + 1, magbins, mp_epic_m, mags, dates, weights, bounds_m, cells, cells_m,
                                  uncert, counts, cell_densities_km2, suffix, outputdir, True,
                                  self.prms.save_realizations])
 
