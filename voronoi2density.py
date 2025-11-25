@@ -145,7 +145,7 @@ class VoronoiSmoothingAlgorithm:
 
         # If requested, apply bootstrapping (NB: when requested, the perturbation of magnitudes occurs earlier):
         if bootstrap:
-            mp_epic_m, mags, dates = self.bootstrap_catalogue_sample(mp_epic_m, mags, dates, uncert, rng)
+            mp_epic_m, mags, dates, evt_weights = self.bootstrap_catalogue_sample(mp_epic_m, mags, dates, evt_weights, uncert, rng)
 
         # Keep only events with magnitude included in the current bin, and located within the bounding box:
         mp_epic_bin, m_bin, t_bin, w_bin = select_events(mp_epic_m, mags, dates, evt_weights, bounds_m, magbin)
@@ -220,7 +220,7 @@ class VoronoiSmoothingAlgorithm:
         cell_densities_km2 *= self.prms.density_scaling_factor
         return counts, cell_densities_km2, vor_diagram, vor_densities_km2, perturbed_catalogue
 
-    def bootstrap_catalogue_sample(self, mp_epic_m, mags, dates, uncert: dict, rng):
+    def bootstrap_catalogue_sample(self, mp_epic_m, mags, dates, weights, uncert: dict, rng):
         """
         Bootstrap sampling of 1 input catalogue sample, taking into account the Poisson-process variability in total
         events count and in location uncertainties.
@@ -232,6 +232,7 @@ class VoronoiSmoothingAlgorithm:
         # NB: Magnitudes already perturbed in method self.perturb_catalogue_mags():
         bs_dates = dates[indices]
         bs_mags = mags[indices]
+        bs_weights = weights[indices]
         pts = []
         for i in indices:
             x_km, y_km = mp_epic_m.geoms[i].coords.xy
@@ -244,7 +245,7 @@ class VoronoiSmoothingAlgorithm:
                                                    rng=rng)
             pts.append((x, y))
         bs_mp_epic_m = MultiPoint(pts)
-        return bs_mp_epic_m, bs_mags, bs_dates
+        return bs_mp_epic_m, bs_mags, bs_dates, bs_weights
 
     def perturb_magnitudes(self, mags, uncert: dict, rng, correct_bias=True, b_value=1.0):
         """
