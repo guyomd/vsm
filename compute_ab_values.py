@@ -168,6 +168,10 @@ class TruncatedGRestimator():
             cell_durations = cell_durations[ib]
             cell_mmid = self.bins['mids'][ib]
 
+            # Defensive-programming:
+            # Check that all bins have a definite and positive duration:
+            assert len(cell_mmid) > 0
+
             # Eventually, define automatically the completeness threshold:
             if auto_mc:
                 imc = cell_intensities.argmax()
