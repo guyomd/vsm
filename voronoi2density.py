@@ -215,7 +215,8 @@ class VoronoiSmoothingAlgorithm:
         counts, cell_densities_km2 = self.reset_values_for_cells_beyond_bounds(cells_m,
                                                                                bounds_m,
                                                                                counts,
-                                                                               cell_densities_km2)
+                                                                               cell_densities_km2,
+                                                                               verbose=(not bootstrap) and self.prms.is_verbose)
 
         cell_densities_km2 *= self.prms.density_scaling_factor
         return counts, cell_densities_km2, vor_diagram, vor_densities_km2, perturbed_catalogue
@@ -306,7 +307,7 @@ class VoronoiSmoothingAlgorithm:
                                   out_epsg=self.prms.internal_epsg)
         return cells, cells_m, centroids, bounds, bounds_m
 
-    def reset_values_for_cells_beyond_bounds(self, cells, bounds, *args):
+    def reset_values_for_cells_beyond_bounds(self, cells, bounds, *args, verbose=True):
         """
         Set a null value to cells with centroid located beyond the bounding polygon
 
@@ -322,7 +323,7 @@ class VoronoiSmoothingAlgorithm:
                 cnt += 1
                 for arg in args:  # Loop over all optional input arguments provided (1 or more)
                     arg[i] = 0.0
-        if cnt > 0:
+        if verbose and (cnt > 0):
             print(f'Set null density into {cnt} cells with centroids located beyond bounds')
         return args
 
