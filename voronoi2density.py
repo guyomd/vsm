@@ -244,7 +244,7 @@ class VoronoiSmoothingAlgorithm:
                                                    uncert['loc_az'][i],
                                                    n=1,
                                                    rng=rng)
-            pts.append((x, y))
+            pts.append(Point((x, y)))
         bs_mp_epic_m = MultiPoint(pts)
         return bs_mp_epic_m, bs_mags, bs_dates, bs_weights
 
