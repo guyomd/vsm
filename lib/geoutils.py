@@ -37,6 +37,28 @@ def convert_to_EPSG(geom, in_epsg="EPSG:4326", out_epsg="EPSG=8857"):
 
 
 ## GEOSPATIAL OPERATIONS: #####################################################
+def remove_duplicate_points(multipoint):
+    """
+    Function to check for duplicates and invalid points
+    """
+    points = list(multipoint.geoms)  # Extract points from MultiPoint
+    unique_points = MultiPoint(set(points))  # Find unique points
+    unique_list = list(unique_points.geoms)
+
+    # Check for duplicates
+    if len(unique_list) != len(points):
+        duplicates = set(p for p in points if points.count(p) > 1)
+        print(f"Duplicate points found: {duplicates}")
+
+    # Validate points (should already be Point instances, but just in case)
+    invalid_points = [p for p in points if not isinstance(p, Point)]
+    if invalid_points:
+        raise ValueError(f"Invalid points found: {invalid_points}")
+    i_uniq = np.array([index for index, p in enumerate(points) if p in unique_list])
+    n_uniq = np.array([points.count(p) for p in unique_list])
+    return unique_points, i_uniq, n_uniq
+
+
 def eqdensity_per_polygon(polygons, weights: np.ndarray, scaling2unit=1.0, log_values=False):
     """
     Compute event density (per km^2) in each polygon, given individual weights in each polygon

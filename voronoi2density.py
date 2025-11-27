@@ -13,6 +13,7 @@ from lib.ioutils import (ParameterSet,
                          polygons_to_file,
                          load_polygons)
 from lib.geoutils import (convert_to_EPSG,
+                          remove_duplicate_points,
                           eqdensity_per_polygon,
                           clipped_voronoi_diagram,
                           build_mesh,
@@ -246,6 +247,11 @@ class VoronoiSmoothingAlgorithm:
                                                    rng=rng)
             pts.append(Point((x, y)))
         bs_mp_epic_m = MultiPoint(pts)
+        # Remove eventual duplicate points (but update their weight accordingly):
+        bs_mp_epic_m, i_uniq, n_uniq = remove_duplicate_points(bs_mp_epic_m)
+        bs_weights = bs_weights[i_uniq] * n_uniq
+        bs_mags = bs_mags[i_uniq]
+        bs_dates = bs_dates[i_uniq]
         return bs_mp_epic_m, bs_mags, bs_dates, bs_weights
 
     def perturb_magnitudes(self, mags, uncert: dict, rng, correct_bias=True, b_value=1.0):
