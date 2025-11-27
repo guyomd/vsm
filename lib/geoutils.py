@@ -54,7 +54,7 @@ def remove_duplicate_points(multipoint):
     invalid_points = [p for p in points if not isinstance(p, Point)]
     if invalid_points:
         raise ValueError(f"Invalid points found: {invalid_points}")
-    i_uniq = np.array([index for index, p in enumerate(points) if p in unique_list])
+    i_uniq = np.array([points.index(p) for p in unique_list])
     n_uniq = np.array([points.count(p) for p in unique_list])
     return unique_points, i_uniq, n_uniq
 
