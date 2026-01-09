@@ -3,6 +3,10 @@ Estimation of (a,b) parameters for a truncated
 Gutenberg-Richter model of the magnitude-frequency
 distribution, based on the formulas published in:
 
+Weichert, D., 1980, Estimation of the earthquake recurrence
+parameters for unequal obervation periods, Bull. Seismol.
+Soc. Am., 70, 4, 1337-1346, doi:10.1785/BSSA0700041337.
+
 Dutfoy, A., 2020, Estimation of the Gutenberg-Richter
 Earthquake Recurrence Parameters for Unequal Observation
 Periods and Imprecise Magnitudes, Pure App. Geophysics, 177,
@@ -10,6 +14,8 @@ Periods and Imprecise Magnitudes, Pure App. Geophysics, 177,
 """
 import numpy as np
 from scipy.optimize import minimize_scalar
+from scipy.special import gammaln
+
 
 
 def cumulative_fmd(mags, a, b, dm, m0=0.0, mmax=np.inf):
@@ -34,7 +40,12 @@ def cumulative_fmd(mags, a, b, dm, m0=0.0, mmax=np.inf):
 
 
 class Dutfoy2020_Estimator():
-
+    """
+    Maximum-likelihood estimation of Gutenberg-Richter law for series of earthquake magnitudes
+    See Dutfoy, A., 2020, Estimation of the Gutenberg-Richter Earthquake Recurrence Parameters
+    for Unequal Observation Periods and Imprecise Magnitudes, Pure App. Geophysics, 177, pp.
+10, 4597-4606, doi:10.1007/s00024-020-02551-8.
+    """
     def __init__(self, central_mags: np.ndarray, durations: np.ndarray, counts: np.ndarray, m0, mmax, dm):
         """Class for the computation of the truncated Gutenberg-Richter model log-likelihood.
 
@@ -65,7 +76,7 @@ class Dutfoy2020_Estimator():
         """
         See eqn (7)
         """
-        a = ab[:, 0]
+        a = ab[:, 0] # log10(nb. events with mag >= 0)
         b = ab[:, 1]
         k0 = np.power(10, -b * self.m0)
         kmax = np.power(10, -b * self.mmax)
@@ -113,12 +124,17 @@ class Dutfoy2020_Estimator():
     def LL(self, ab: np.ndarray):
         """
         see eqn (12)
-
         """
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
         r = np.sinh(beta * self.delta) / self.alpha(beta)
-        return -2 * mu * r * T0 + self.N * np.log(mu) + U0 + self.N * np.log(2 * r) - beta * U1
+
+        # Compute the normalization constant for the Poisson probability:
+        norm_cst = np.sum([gammaln(k + 1) for k in self.cnts])
+
+        # Compute log-likelihood:
+        logL = -2 * mu * r * T0 + self.N * np.log(mu) + U0 + self.N * np.log(2 * r) - beta * U1 - norm_cst
+        return logL
 
     def LL_with_prior(self, ab: np.ndarray, prior_fun):
         """
@@ -130,8 +146,12 @@ class Dutfoy2020_Estimator():
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
         r = np.sinh(beta * self.delta) / self.alpha(beta)
-        return -2 * mu * r * T0 + self.N * np.log(mu) + U0 + self.N * np.log(2 * r) - beta * U1 + prior_fun(
-            beta / np.log(10))
+
+        # Compute the normalization constant for the Poisson probability:
+        norm_cst = np.sum([gammaln(k + 1) for k in self.cnts])
+
+        logL = -2 * mu * r * T0 + self.N * np.log(mu) + U0 + self.N * np.log(2 * r) - beta * U1 - norm_cst
+        return logL + prior_fun(beta / np.log(10))
 
     def LL_with_normal_prior(self, ab: np.ndarray, mean_b, std_b):
         """
@@ -141,17 +161,22 @@ class Dutfoy2020_Estimator():
         mu, beta = self.ab2mubeta(ab)
         T0, T1, T2, U0, U1, U2 = self.TiUi(beta)
         r = np.sinh(beta * self.delta) / self.alpha(beta)
+
+        # Compute the normalization constant for the Poisson probability:
+        norm_cst = np.sum([gammaln(k + 1) for k in self.cnts])
+
         mean_beta = mean_b * np.log(10)
         std_beta = std_b * np.log(10)
         log_prior_term = np.log(1 / (std_beta * np.sqrt(2))) - 0.5 * np.power((beta - mean_beta) / std_beta, 2)
-        return -2 * mu * r * T0 + self.N * np.log(mu) + U0 + self.N * np.log(2 * r) - beta * U1 + log_prior_term
+        logL = -2 * mu * r * T0 + self.N * np.log(mu) + U0 + self.N * np.log(2 * r) - beta * U1 - norm_cst
+        return logL + log_prior_term
 
     def _beta_root_function(self, beta):
         """
         See eqn (18)
         """
         T0, T1, T2, U0, U1, U2 = self.TiUi(np.array([beta]))
-        return np.abs((T1 / T0) - (U1 / self.N))
+        return (T1 / T0) - (U1 / self.N)
 
     def _beta_root_function_with_normal_prior(self, beta, mean_beta, std_beta):
         """
@@ -159,7 +184,7 @@ class Dutfoy2020_Estimator():
         probability on b (with mean=mean_b and std. dev.=std.b).
         """
         T0, T1, T2, U0, U1, U2 = self.TiUi(np.array([beta]))
-        return np.abs((T1 / T0) - (U1 / self.N) - (beta - mean_beta) / (self.N * std_beta**2))
+        return (T1 / T0) - (U1 / self.N) - (beta - mean_beta) / (self.N * std_beta ** 2)
 
     def _mu_opt(self, beta_opt):
         """
@@ -168,21 +193,27 @@ class Dutfoy2020_Estimator():
         T0 = self.TiUi(beta_opt)[0]
         return (self.N * self.alpha(beta_opt)) / (2 * np.sinh(beta_opt * self.delta) * T0)
 
+
     def find_optimal_ab_no_prior(self):
         """
         Search for optimal (a,b) parameters, see eqns (17) and (18)
         """
         beta0 = np.log(10)
-        res = minimize_scalar(self._beta_root_function,
-                              method='bounded',
-                              bounds=[0.0 * np.log(10), 3.0 * np.log(10)]
-                              )
-        N = np.sum(self.cnts * self.durs)
-        beta = res.x
+        res = root_scalar(self._beta_root_function,
+                          bracket=[0.1, 10.0]
+                          )
+        N = np.sum(self.cnts)
+        beta = np.array([res.root])
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
-        rho, cov = self.correlation_coef(np.array((a,b)))
+        rho, cov = self.correlation_coef(np.array((a, b)))
         return a[0, 0], b[0, 0], rho, cov
+
+    def find_optimal_ab(self):
+        """
+        alias for self.find_optimal_ab_no_prior()
+        """
+        return self.find_optimal_ab_no_prior()
 
     def find_optimal_ab_no_prior_b_truncated(self, bounds_b):
         """
@@ -212,16 +243,16 @@ class Dutfoy2020_Estimator():
         mean_beta = mean_b * np.log(10)
         std_beta = std_b * np.log(10)
         prior_args = (mean_beta, std_beta)
-        res = minimize_scalar(self._beta_root_function_with_normal_prior,
-                              method='bounded',
-                              bounds=[0.5 * np.log(10), 3.0 * np.log(10)],
-                              args=prior_args
-                              )
-        N = np.sum(self.cnts * self.durs)
-        beta = res.x
+        beta0 = np.log(10)
+        res = root_scalar(self._beta_root_function_with_normal_prior,
+                          bracket=[0.1, 10.0],
+                          args=prior_args
+                          )
+        N = np.sum(self.cnts)
+        beta = np.array([res.root])
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
-        rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
+        rho, cov = self.correlation_coef(np.array((a, b)), std_b=std_b)
         return a[0, 0], b[0, 0], rho, cov
 
     def find_optimal_ab_with_truncated_normal_prior(self, mean_b, std_b, bounds_b):
@@ -294,7 +325,9 @@ class Dutfoy2020_Estimator():
         # Handle the rare case when covariance matrix elements are negative if a prior on beta is specified:
         if (cov[0, 0] < 0) or (cov[1, 1] < 0):
             print('\nWARNING: Due to negative diagonal element(s) in covariance matrix, will return ' +
-                  f'ABSOLUTE covariance matrix:\n{cov}')
+                  f'ABSOLUTE covariance matrix:')
+            print(f'Covariance matrix:\n{cov}')
+            print(f'Fisher Information Matrix:\n{G}')
             cov = np.abs(cov)
         return cov
 
@@ -306,3 +339,4 @@ class Dutfoy2020_Estimator():
         cov = self.covariance_matrix(ab, std_b=std_b)
         rho = cov[0, 1] / (np.sqrt(cov[0, 0]) * np.sqrt(cov[1, 1]))
         return rho, cov
+
