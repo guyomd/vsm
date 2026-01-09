@@ -44,6 +44,10 @@ if __name__ == "__main__":
                              + 'given in parameter "density_scaling_factor".',
                         action='store_true')
 
+    parser.add_argument('--no-model',
+                        help="Do not overlay FMD model adjustment",
+                        action='store_true')
+
     args = parser.parse_args()
     
     # Load parameters:
@@ -114,11 +118,15 @@ if __name__ == "__main__":
         rho = _set_value_if_not_nan(grt_prms[indx, 6])
         mc = _set_value_if_not_nan(grt_prms[indx, 7])
 
-        if (a is None) or np.isinf(a):
-            a = None
-            b = None
-            da = None
-            print(f'Warning: Invalid a-value detected. Do not plot FMD model.')
+        if args.no_model:
+            # Set a and b values to None to deactivate FMD model plot:
+            a = b = None
+        else:
+            if (a is None) or np.isinf(a):
+                a = None
+                b = None
+                da = None
+                print(f'Warning: Invalid a-value detected. Do not plot FMD model.')
 
         if prms.fmd_info_file:
             mmax = _set_value_if_not_nan(estim.cellinfo[indx, 3], additional_condition=lambda x: x > 0)
