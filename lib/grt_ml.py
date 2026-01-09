@@ -13,7 +13,7 @@ Periods and Imprecise Magnitudes, Pure App. Geophysics, 177,
 10, 4597-4606, doi:10.1007/s00024-020-02551-8.
 """
 import numpy as np
-from scipy.optimize import minimize_scalar
+from scipy.optimize import minimize_scalar, root_scalar
 from scipy.special import gammaln
 
 
