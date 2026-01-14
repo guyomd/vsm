@@ -103,6 +103,10 @@ if __name__ == "__main__":
                         help="Tighten map boundaries to the bounding polygon defined in file 'bounds.txt'",
                         action='store_true')
 
+    parser.add_argument('--no-color',
+                        help="Disable color-coding of polygons",
+                        action='store_true')
+
     args = parser.parse_args()
 
     # Load parameters:
@@ -201,9 +205,9 @@ if __name__ == "__main__":
         
         # Set title:
         if args.title is None:
-            title = prefix
+            title_arg = prefix
         else:
-            title = args.title
+            title_arg = args.title
 
         # Plot polygons boundaries:
         if args.boundaries is True:
@@ -227,19 +231,26 @@ if __name__ == "__main__":
             boundaries = None
             buffer = 0.0
 
+        if args.no_color:
+            clim_arg = False
+            figure_title = title_arg  # Set figure title
+        else:
+            clim_arg = [cmin, cmax]
+            figure_title = None  # Disable figure title
+
         map_polygons(f'{inputfile}', 
-                     clim=[cmin, cmax],
+                     clim=clim_arg,
                      bounds=boundaries,
                      pen=pen_spec,
                      colormap=f"{args.colormap}",
                      colormap_reversal=args.invert,
                      colormap_nbins=30,
-                     cbar_title=f"{title}",
+                     cbar_title=f"{title_arg}",
                      savefig=True,
                      filename=os.path.join(args.output_directory, f'{prefix}.png'),
                      showfig=False,
                      coast_resolution=coast_res,
-                     title=None,
+                     title=figure_title,
                      dpi=300,
                      spatial_buffer=buffer,
                      add_polygon=bounding_box,
