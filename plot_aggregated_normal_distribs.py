@@ -55,10 +55,6 @@ if __name__ == "__main__":
                         help="input files",
                         nargs='+',
                         type=str)
-    
-    parser.add_argument("-g", "--showgrid", 
-                        help="Show grid", 
-                        action="store_true")
 
     parser.add_argument('-o', '--output-directory',
                         help="Output directory for figures",
@@ -88,14 +84,17 @@ if __name__ == "__main__":
         print(f'>> Creating output directory: "{args.output_directory}"')
         os.mkdir(args.output_directory)
 
-    # Load geographical boundaries:
-    envelope = load_points(prms.bounds_file)
-    xb, yb = envelope.exterior.xy
-    limits = [min(xb), max(xb), min(yb), max(yb)]
-
     # Load current polygon, or pixel:
     multipoly, _ = load_polygons(args.polygons_file)
     polygon = multipoly.geoms[args.index - 1]
+
+    # Load geographical boundaries:
+    if prms.bounds_file is None:
+        limits = [multipoly.bounds[0], multipoly.bounds[2], multipoly.bounds[1], multipoly.bounds[3]]
+    else:
+        envelope = load_points(prms.bounds_file)
+        xb, yb = envelope.exterior.xy
+        limits = [min(xb), max(xb), min(yb), max(yb)]
 
     # Load values and build mixture distribution:
     values = []
