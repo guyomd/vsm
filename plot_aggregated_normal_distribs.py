@@ -152,8 +152,7 @@ if __name__ == "__main__":
                          y=af,
                          z=zf,
                          region=brange + arange,
-                         spacing=((brange[1] - brange[0]) / args.number_of_bins, (arange[1] - arange[0]) / args.number_of_bins),
-                         outgrid='grid.nc')
+                         spacing=((brange[1] - brange[0]) / args.number_of_bins, (arange[1] - arange[0]) / args.number_of_bins))
     pygmt.makecpt(cmap='roma', reverse=True, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
 
     # --> 2-D probability distribution function:
