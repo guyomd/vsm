@@ -36,6 +36,13 @@ This package consists in two main modules added of a suite of utilities for plot
 * Outputs produced by the module
 * Optional outputs requested on-demand by the user
 
+## Warning & Recommandations for good-practice ##
+**Notice for the propagation of magnitude uncertainties:**
+When the user activates the propagation of locations & magnitude uncertainties, it is strongly advised to include 
+events in the catalogue with magnitude smaller than the lower bound of the first bin in magnitude. 
+This is important to avoid an exagerated depletion of earthquake counts in the first bin after perturbation of original
+magnitude values. Note however that, in any case, earthquake counts in each bin are expected to decrease due to the 
+symmetrical (i.e., normal) perturbation of an exponentially-distributed variable (e.g., Rhoades, Tectonophysics, 1996).
 
 ## Examples / Use-cases ##
 Tutorials and examples will be included to assist interested users with our input formats, and with the use of the programs.
