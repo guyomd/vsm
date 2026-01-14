@@ -162,9 +162,8 @@ if __name__ == "__main__":
     grd = pygmt.xyz2grd(x=bf,
                         y=af,
                         z=zf,
-                        region=[brange[0], brange[1], arange[0], arange[1]],
-                        spacing=f'{args.number_of_bins}/{args.number_of_bins}+n',
-                        registration='pixel')
+                        region=[brange[0] - dx, brange[1] + dx, arange[0] - dy, arange[1] + dy],
+                        spacing=f'{dx}/{dy}')
     pygmt.makecpt(cmap=args.colormap, reverse=True, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
 
     # --> 2-D probability distribution function:
