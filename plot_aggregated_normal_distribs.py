@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--number-of-bins',
                         help="Number of bins used per axis to plot the distribution",
                         type=int,
-                        default=20)
+                        default=100)
 
     parser.add_argument("-r", "--range",
                         help="Specify lower and upper limits for the X- and Y-axes. 4 arguments in the Xmin, Xmax, Ymin, Ymax order",
