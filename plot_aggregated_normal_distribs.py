@@ -70,7 +70,12 @@ if __name__ == "__main__":
                         type=float,
                         default=None)
 
-    parser.add_argument("-c", "--draw-contours",
+    parser.add_argument("-c", "--colormap",
+                        help="Specify GMT colormap explicitely. Note that colormap are increasing in reverse order here.",
+                        type=str,
+                        default="roma")
+
+    parser.add_argument("--draw-contours",
                         help="Overlay contours on 2-D PDF plot",
                         action='store_true')
 
@@ -158,13 +163,13 @@ if __name__ == "__main__":
                         y=af,
                         z=zf,
                         region=[brange[0], brange[1], arange[0], arange[1]],
-                        spacing=(dx, dy))
+                        spacing=f'{args.number_of_bins}/{args.number_of_bins}+n')
     """
     grd = pygmt.sphinterpolate(np.array((bf, af, zf)).T,
                          region=[brange[0], brange[1], arange[0], arange[1]],
                          spacing=f'{dx}+e/{dy}+e')
     """
-    pygmt.makecpt(cmap='roma', reverse=True, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
+    pygmt.makecpt(cmap=args.colormap, reverse=True, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
 
     # --> 2-D probability distribution function:
     fig = pygmt.Figure()
