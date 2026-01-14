@@ -6,13 +6,12 @@ import openturns as ot
 from shapely import Point, Polygon
 from argparse import ArgumentParser
 from tqdm import tqdm
+import pygmt
 
 # Internal dependencies:
-from lib.plotutils import empirical_distribution
 from lib.ioutils import (ParameterSet,
                          load_points,
                          load_bins,
-                         minmax_in_polygon_file,
                          load_polygons)
 
 
