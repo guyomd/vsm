@@ -154,16 +154,16 @@ if __name__ == "__main__":
     print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
     dx = (brange[1] - brange[0]) / args.number_of_bins
     dy = (arange[1] - arange[0]) / args.number_of_bins
-    """
     grd = pygmt.xyz2grd(x=bf,
                         y=af,
                         z=zf,
-                        region=brange + arange,
+                        region=[brange[0], brange[1], arange[0], arange[1]],
                         spacing=(dx, dy))
     """
     grd = pygmt.sphinterpolate(np.array((bf, af, zf)).T,
                          region=[brange[0], brange[1], arange[0], arange[1]],
                          spacing=f'{dx}+e/{dy}+e')
+    """
     pygmt.makecpt(cmap='roma', reverse=True, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
 
     # --> 2-D probability distribution function:
