@@ -112,7 +112,7 @@ if __name__ == "__main__":
     damin = dbmin = np.inf
     damax = dbmax = -np.inf
     for file in tqdm(filelist):
-        a, b, da, db, cov, lonlat = load_ab_from_grid(file, cell_index, return_centroid=True)  # 1-based cell-index
+        a, b, da, db, cov, lonlat = load_ab_from_grid(file, args.index, return_centroid=True)  # 1-based cell-index
         if a > amax:
             amax = a
         if b > bmax:
