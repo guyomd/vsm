@@ -152,16 +152,23 @@ if __name__ == "__main__":
 
     # Make plot:
     print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
+    dx = (brange[1] - brange[0]) / args.number_of_bins
+    dy = (arange[1] - arange[0]) / args.number_of_bins
+    """
     grd = pygmt.xyz2grd(x=bf,
-                         y=af,
-                         z=zf,
-                         region=brange + arange,
-                         spacing=((brange[1] - brange[0]) / args.number_of_bins, (arange[1] - arange[0]) / args.number_of_bins))
+                        y=af,
+                        z=zf,
+                        region=brange + arange,
+                        spacing=(dx, dy))
+    """
+    grd = pygmt.sphinterpolate(np.array((bf, af, zf)).T,
+                         region=[brange[0], brange[1], arange[0], arange[1]],
+                         spacing=f'{dx}+e/{dy}+e')
     pygmt.makecpt(cmap='roma', reverse=True, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
 
     # --> 2-D probability distribution function:
     fig = pygmt.Figure()
-    fig.basemap(projection="X15c", frame=["a"], region=brange + arange)
+    fig.basemap(projection="X15c", frame=["a"], region=[brange[0], brange[1], arange[0], arange[1]])
     fig.grdimage(grid=grd, cmap=True)
     if args.draw_contours:
         grd_interval = zrange / 10
@@ -170,10 +177,10 @@ if __name__ == "__main__":
     fig.colorbar(cmap=True, frame="xa+lPDF")
 
     # --> Add inset with the polygon location (in red) over the whole model area in the inset:
-    with fig.inset(position="jBL+o8.2c/0.3c",
+    with fig.inset(position="jBL+o12.0c/0.3c",
                    box="+pblack",
                    region=limits,
-                   projection='M1.5c'):
+                   projection='M3.0c'):
         fig.coast(
             land="gray",
             borders=1,
