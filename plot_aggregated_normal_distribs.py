@@ -70,6 +70,10 @@ if __name__ == "__main__":
                         type=float,
                         default=None)
 
+    parser.add_argument("-c", "--draw-contours",
+                        help="Overlay contours on 2-D PDF plot",
+                        action='store_true')
+
     args = parser.parse_args()
     
     # Load parameters:
