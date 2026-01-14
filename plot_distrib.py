@@ -22,7 +22,7 @@ if __name__ == "__main__":
                         help="Configuration file")
 
     parser.add_argument("-i", "--index",
-                        help="Cell index (required)",
+                        help="Cell index (required, O-based indexing)",
                         required=True,
                         type=int)
 
