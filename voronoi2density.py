@@ -419,6 +419,7 @@ class VoronoiSmoothingAlgorithm:
                                              leave=True),
                                         chunksize=1):
                     bs_index = result[0] - 1
+                    suffix = f'_bs_{result[0]:0{bs_nz}d}'  # Reconstruct suffix
                     bs_counts[bs_index, :, :] = result[1]
                     bs_cell_densities_km2[bs_index, :, :] = result[2]
                     col_titles = result[3]
@@ -474,6 +475,7 @@ class VoronoiSmoothingAlgorithm:
                                           cell_densities_std[:, bin_index + 2],
                                           verbose=True)
 
+        # Return average counts/densities:
         self.write_matrix_CSV(self.prms.output_dir,
                               f'gridded_counts.txt',
                               counts,
