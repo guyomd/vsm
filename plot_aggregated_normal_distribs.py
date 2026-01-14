@@ -141,8 +141,8 @@ if __name__ == "__main__":
         arange = [amin - 3 * damax, amax + 3 * damax]
         brange = [bmin - 3 * dbmax, bmax + 3 * dbmax]
     else:
-        arange = args.range[0:2]
-        brange = args.range[2:4]
+        brange = args.range[0:2]
+        arange = args.range[2:4]
 
     # Sample distribution over the 2-D plane:
     bg, ag = np.meshgrid(np.linspace(brange[0], brange[1], args.number_of_bins),
