@@ -167,7 +167,7 @@ if __name__ == "__main__":
         grd_interval = zrange / 10
         grd_annotation = "-"  # Disable all annotations
         fig.grdcontour(grid=grd, levels=grd_interval, annotation=grd_annotation)
-    fig.colorbar(cmap=True, frame=f"xa+l{PDF}")
+    fig.colorbar(cmap=True, frame="xa+lPDF")
 
     # --> Add inset with the polygon location (in red) over the whole model area in the inset:
     with fig.inset(position="jBL+o8.2c/0.3c",
