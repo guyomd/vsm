@@ -148,8 +148,8 @@ if __name__ == "__main__":
 
     # Make plot:
     print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
-    grd = pygmt.xyz2grd(x=xf,
-                         y=yf,
+    grd = pygmt.xyz2grd(x=bf,
+                         y=af,
                          z=zf,
                          region=brange + arange,
                          spacing=((brange[1] - brange[0]) / args.number_of_bins, (arange[1] - arange[0]) / args.number_of_bins),
