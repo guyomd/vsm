@@ -222,11 +222,11 @@ class TruncatedGRestimator():
             stda = np.sqrt(cov[1, 1])
 
             # Eventually, scale a-value to target area (do NOT scale stda, stdb and b!):
-            if scaling_area_km2 is not None:
+            if scaling_area_km2 is None:
+                target_area = self.areas[i]
+            else:
                 a = np.log10(scaling_area_km2 / self.areas[i] * 10 ** (a))
                 target_area = scaling_area_km2
-            else:
-                target_area = self.areas[i]
             self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, target_area])
 
 
