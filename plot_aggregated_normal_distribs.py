@@ -133,16 +133,25 @@ if __name__ == "__main__":
             damax = da
         if db > dbmax:
             dbmax = db
-        distribs.append(ot.Normal([a, b], cov))
+        try:
+            distribs.append(ot.Normal([a, b], cov))
+        except TypeError:
+            pass
     mixture = ot.Mixture(distribs)  # Mixture distribution with equal weights for every element
 
     # If needed, define range from extreme sample values:
     if args.range is None:
-        arange = [amin - 3 * damax, amax + 3 * damax]
-        brange = [bmin - 3 * dbmax, bmax + 3 * dbmax]
+        arange = [amin - damax, amax + damax]
+        brange = [bmin - dbmax, bmax + dbmax]
     else:
         brange = args.range[0:2]
         arange = args.range[2:4]
+
+    # Print mxiture distribution statistics:
+    mean  = mixture.getMean()
+    std = mixture.getStandardDeviation()
+    corrcoef = mixture.getPearsonCorrelation()[0,1]
+    print(f'>> Mixture distribution:\n\tmeans = {mean}\n\tstd.devs. = {std}\n\trho = {corrcoef}')
 
     # Sample distribution over the 2-D plane:
     bg, ag = np.meshgrid(np.linspace(brange[0], brange[1], args.number_of_bins + 1),
@@ -174,6 +183,9 @@ if __name__ == "__main__":
         grd_interval = zrange / 10
         grd_annotation = "-"  # Disable all annotations
         fig.grdcontour(grid=grd, levels=grd_interval, annotation=grd_annotation)
+    fig.plot(x=[mean[1], mean[1]], y=[arange[0], mean[0]], pen='1p,black,dashed')
+    fig.plot(x=[brange[0], mean[1]], y=[mean[0], mean[0]], pen='1p,black,dashed', label='Mean')
+    fig.legend()
     fig.colorbar(cmap=True, frame="xa+lPDF")
 
     # --> Add inset with the polygon location (in red) over the whole model area in the inset:
