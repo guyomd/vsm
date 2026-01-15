@@ -145,8 +145,8 @@ if __name__ == "__main__":
         arange = args.range[2:4]
 
     # Sample distribution over the 2-D plane:
-    bg, ag = np.meshgrid(np.linspace(brange[0], brange[1], args.number_of_bins),
-                         np.linspace(arange[0], arange[1], args.number_of_bins),
+    bg, ag = np.meshgrid(np.linspace(brange[0], brange[1], args.number_of_bins + 1),
+                         np.linspace(arange[0], arange[1], args.number_of_bins + 1),
                          indexing='xy')
     bf = bg.flatten()
     af = ag.flatten()
