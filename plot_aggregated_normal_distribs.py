@@ -183,8 +183,8 @@ if __name__ == "__main__":
         grd_interval = zrange / 10
         grd_annotation = "-"  # Disable all annotations
         fig.grdcontour(grid=grd, levels=grd_interval, annotation=grd_annotation)
-    fig.plot(x=[mean[1], mean[1]], y=[arange[0], mean[0]], pen='0.5p,black,dotted')
-    fig.plot(x=[brange[0], mean[1]], y=[mean[0], mean[0]], pen='0.5p,black,dotted', label='Mean')
+    fig.plot(x=[mean[1], mean[1]], y=[arange[0], mean[0]], pen='1p,black,dotted')
+    fig.plot(x=[brange[0], mean[1]], y=[mean[0], mean[0]], pen='1p,black,dotted', label='Mean')
     fig.legend()
     fig.colorbar(cmap=True, frame="xa+lPDF")
 
