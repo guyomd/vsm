@@ -55,10 +55,12 @@ class TruncatedGRestimator():
         :param rescale_to_polygons_areas, None or numpy.ndarray, if not None, cell-wise multiplicative density scaling factor
         """
         self.file_densities = filename
+        # We load densities rescaled to 1 km^2 area:
         self.densities, self.ncells, self.nbins, self.bin_ids = load_grid(
             self.file_densities,
             scaling_factor=scaling_factor)
         nl, nc = self.densities.shape
+        # If specified, we scale densities to polygons areas (in km^2):
         if rescale_to_polygons_areas is None:
             areas = np.ones((nl, nc - 2))
         else:
@@ -147,7 +149,7 @@ class TruncatedGRestimator():
         print(f'>> Kept {ncells} cells from the original grid of {n_init} cells')
         return bin_durations, cellinfo, densities, prior_b, i_kept, i_removed
 
-    def _ML_estimation(self, skip_missing_priors=False, auto_mc=False, b_truncation=None):
+    def _ML_estimation(self, skip_missing_priors=False, auto_mc=False, b_truncation=None, scaling_area_km2=None):
         """
         Maximum-likelihood estimation of (a, b) parameters (Dutfoy, 2021; Weichert, 1980)
 
@@ -218,10 +220,17 @@ class TruncatedGRestimator():
 
             stdb = np.sqrt(cov[0, 0])
             stda = np.sqrt(cov[1, 1])
-            self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, self.areas[i]])
+
+            # Eventually, scale a-value to target area (do NOT scale stda, stdb and b!):
+            if scaling_area_km2 is not None:
+                a = np.log10(scaling_area_km2 / self.areas[i] * 10 ** (a))
+                target_area = scaling_area_km2
+            else:
+                target_area = self.areas[i]
+            self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, target_area])
 
 
-    def run(self, options, print_warnings=False, b_truncation=None):
+    def run(self, options, print_warnings=False, b_truncation=None, target_area_km2=None):
         """
         Evaluate a and b parameters of the truncated GR relationship in each cell
         """
@@ -231,7 +240,8 @@ class TruncatedGRestimator():
 
         self._ML_estimation(skip_missing_priors=options['skip_missing_priors'],
                             auto_mc=options['auto_mc'],
-                            b_truncation=b_truncation)
+                            b_truncation=b_truncation,
+                            scaling_area_km2=target_area_km2)
 
     def write_to_csv(self, filename):
         """
@@ -270,7 +280,10 @@ if __name__ == "__main__":
 
     # Read input arguments:
     parser = ArgumentParser(
-        description="Compute (a, b) parameters of the frequency-magnitude distribution in each cell")
+        description="Compute (a, b) parameters of the frequency-magnitude distribution in each cell " \
+                    + "(NB: These parameters are obtained from densities rescaled at the area of each " \
+                    + "individual cell, before an eventual rescaling to the target reference area, unless " \
+                    + "option -s is set, in order to preserve the coherency of covariance estimates).")
     parser.add_argument("configfile",
                         nargs='?',
                         default="parameters.txt",
@@ -283,8 +296,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-s", "--rescale-to-cell-area",
                         help='If set, rescale densities (and a-values) to each cell/polygon area. ' \
-                             + 'Otherwise, keep parameters scaled to the fixed area (in km^2) ' \
-                             + 'given in parameter "density_scaling_factor".',
+                             + 'Otherwise, keep parameters scaled for the area specified (in km^2) ' \
+                             + 'in configuration file (see parameter "density_scaling_factor").',
                         action='store_true')
 
     parser.add_argument("--b-truncation",
@@ -313,25 +326,18 @@ if __name__ == "__main__":
     estim = TruncatedGRestimator()
     estim.mmin = args.mmin
     estim.mmax = args.mmax
-    if args.rescale_to_cell_area:
-        pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
-        pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
-        polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
-        area_scaling = 1 / prms.density_scaling_factor
-        estim.areas = polareas
-    else:
-        area_scaling = 1.0
-        polareas = None
+    pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
+    pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
+    polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+    area_scaling = 1 / prms.density_scaling_factor
+    estim.areas = polareas
 
+    # NB: Calling next function affects a value to estim.ncells
     estim.load_densities(inputfile,
                          scaling_factor=area_scaling,
-                         rescale_to_polygons_areas=polareas)  # NB: Calling this function affects a value to variable estim.ncells
+                         rescale_to_polygons_areas=polareas)
     estim.load_bins(prms.bins_file)
 
-    if not args.rescale_to_cell_area:
-        # Set an array of constant scaling-area values:
-        estim.areas = prms.density_scaling_factor * np.ones((estim.ncells,))
-    
     # Load FMD information (Mmin, Mmax, and optionally bin durations):
     estim.load_fmd_info(filename=prms.fmd_info_file, verbose=prms.is_verbose)
 
@@ -353,10 +359,17 @@ if __name__ == "__main__":
            'auto_mc': prms.is_mc_automatic}
 
     # Estimate G-R parameters over cells:
-    estim.run(opts,
-              print_warnings=False,
-              b_truncation=args.b_truncation)
-    
+    if args.rescale_to_cell_area:
+        estim.run(opts,
+                  print_warnings=False,
+                  b_truncation=args.b_truncation,
+                  target_area_km2=None)
+    else:
+        estim.run(opts,
+                  print_warnings=False,
+                  b_truncation=args.b_truncation,
+                  target_area_km2=prms.density_scaling_factor)
+
     # Save results:
     estim.write_to_csv(os.path.join(prms.output_dir, 'ab_values.txt'))
     estim.write_to_GMT_ASCII_tables(directory=prms.output_dir)
