@@ -1,5 +1,6 @@
 import sys
 import os
+import glob
 import numpy as np
 from tqdm import tqdm
 import warnings
@@ -254,25 +255,25 @@ class TruncatedGRestimator():
                    delimiter='; ')
         print(f'{filename}:: saved Gutenberg-Richter parameters for {self.ncells} cells')
     
-    def write_to_GMT_ASCII_tables(self, directory='.'):
+    def write_to_GMT_ASCII_tables(self, directory='.', suffix=''):
         """
         Save results into GMT ASCII polygon files
         """
         template_cell_file = os.path.join(directory, 
                                           f'density_bin_{self.bins["id"][0]}.txt')
-        self.file_GMT_a = os.path.join(directory, 'a_cells.txt')
+        self.file_GMT_a = os.path.join(directory, f'a_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_a, self.grt_params[:, 2])
-        self.file_GMT_b = os.path.join(directory, 'b_cells.txt')
+        self.file_GMT_b = os.path.join(directory, f'b_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_b, self.grt_params[:, 3])
-        self.file_GMT_da = os.path.join(directory, 'da_cells.txt')
+        self.file_GMT_da = os.path.join(directory, f'da_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_da, self.grt_params[:, 4])
-        self.file_GMT_db = os.path.join(directory, 'db_cells.txt')
+        self.file_GMT_db = os.path.join(directory, f'db_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_db, self.grt_params[:, 5])
-        self.file_GMT_rho = os.path.join(directory, 'rho_ab_cells.txt')
+        self.file_GMT_rho = os.path.join(directory, f'rho_ab_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_rho, self.grt_params[:, 6])
-        self.file_GMT_mc = os.path.join(directory, 'mc_cells.txt')
+        self.file_GMT_mc = os.path.join(directory, f'mc_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_mc, self.grt_params[:, 7])
-        self.file_GMT_mmax = os.path.join(directory, 'mmax_cells.txt')
+        self.file_GMT_mmax = os.path.join(directory, f'mmax_cells{suffix}.txt')
         change_zvalue_in_polygon_file(template_cell_file, self.file_GMT_mmax, self.cellinfo[:, 3])
 
 
@@ -315,6 +316,11 @@ if __name__ == "__main__":
                         default=None,
                         type=float)
 
+    parser.add_argument("-p", "--from-bootstrapped-results",
+                        help="Estimate a- and b-values as the average of the mixture distribution aggregated from bivariate normal "\
+                            + "distributions of bootstrapped results",
+                       action="store_true")
+
     args = parser.parse_args()
     
     # Load parameters:
@@ -322,7 +328,14 @@ if __name__ == "__main__":
     prms.load_settings(args.configfile)
 
     # Load data:
-    inputfile = os.path.join(prms.output_dir, 'gridded_densities.txt')
+    if args.from_bootstrapped_results:
+        import openturns as ot
+        outputdir = os.path.join(prms.output_dir, 'bootstrap')
+        filelist = glob.glob(os.path.join(prms.output_dir, 'bootstrap', 'gridded_densities_bs_*.txt'))
+    else:
+        outputdir = prms.output_dir
+        filelist = [os.path.join(prms.output_dir, 'gridded_densities.txt')]
+
     estim = TruncatedGRestimator()
     estim.mmin = args.mmin
     estim.mmax = args.mmax
@@ -332,44 +345,88 @@ if __name__ == "__main__":
     area_scaling = 1 / prms.density_scaling_factor
     estim.areas = polareas
 
-    # NB: Calling next function affects a value to estim.ncells
-    estim.load_densities(inputfile,
-                         scaling_factor=area_scaling,
-                         rescale_to_polygons_areas=polareas)
-    estim.load_bins(prms.bins_file)
+    # Loop over all 'gridded_densities*.txt' files:
+    first_pass = True
+    for inputfile in filelist:
 
-    # Load FMD information (Mmin, Mmax, and optionally bin durations):
-    estim.load_fmd_info(filename=prms.fmd_info_file, verbose=prms.is_verbose)
+        print(f'\n### PROCESSING FILE {inputfile}...');
+        suffix4csv = os.path.basename(inputfile).replace('gridded_densities','').replace('.txt','')  # '_bs_XX' or '' file suffixes
 
-    # Load prior information on b-value:
-    if (args.b_prior is not None) and (prms.prior_b_info_file is not None):
-        raise ValueError('Error: Cannot use option "-b" when "file_for_prior_b_information" ' +
-                         'is already specified in configuration file')
-    elif prms.prior_b_info_file is not None:
-        estim.load_prior_on_b(filename=prms.prior_b_info_file, verbose=prms.is_verbose)
-    elif isinstance(args.b_prior, list):
-        estim.load_prior_on_b(b_mean=args.b_prior[0], b_std=args.b_prior[1], verbose=prms.is_verbose)
+        # NB: Calling next function affects a value to estim.ncells
+        estim.load_densities(inputfile,
+                             scaling_factor=area_scaling,
+                             rescale_to_polygons_areas=polareas)
+        if first_pass:
+            first_pass = False
+            elements = [[] for k in range(estim.ncells)]
+
+        estim.load_bins(prms.bins_file)
+
+        # Load FMD information (Mmin, Mmax, and optionally bin durations):
+        estim.load_fmd_info(filename=prms.fmd_info_file, verbose=prms.is_verbose)
+
+        # Load prior information on b-value:
+        if (args.b_prior is not None) and (prms.prior_b_info_file is not None):
+            raise ValueError('Error: Cannot use option "-b" when "file_for_prior_b_information" ' +
+                             'is already specified in configuration file')
+        elif prms.prior_b_info_file is not None:
+            estim.load_prior_on_b(filename=prms.prior_b_info_file, verbose=prms.is_verbose)
+        elif isinstance(args.b_prior, list):
+            estim.load_prior_on_b(b_mean=args.b_prior[0], b_std=args.b_prior[1], verbose=prms.is_verbose)
+        else:
+            # No prior on b-values:
+            print('>> No prior for b-values over the domain')
+            estim.file_prior_b = None
+
+        # Set options:
+        opts = {'skip_missing_priors': prms.skip_ab_if_missing_priors,
+               'auto_mc': prms.is_mc_automatic}
+
+        # Estimate G-R parameters over all cells:
+        if args.rescale_to_cell_area:
+            estim.run(opts,
+                      print_warnings=False,
+                      b_truncation=args.b_truncation,
+                      target_area_km2=None)
+        else:
+            estim.run(opts,
+                      print_warnings=False,
+                      b_truncation=args.b_truncation,
+                      target_area_km2=prms.density_scaling_factor)
+
+        if args.from_bootstrapped_results:
+            # Save results individually:
+            estim.write_to_csv(os.path.join(outputdir, f'ab_values{suffix4csv}.txt'))
+
+        # Accumulate bootstrapped normal distributions of results for each cell:
+        if args.from_bootstrapped_results:
+            for k in  range(estim.ncells):
+                lon, lat, a, b, stda, stdb, rho, mc, target_area = estim.grt_params[k, :]
+                cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
+                elements[k].append(ot.Normal([a, b], cov))
+        else:
+            # Quit for loop if not using bootstrapped results
+            break
+
+    if args.from_bootstrapped_results:
+        suffix4agg = '_aggregated'
+        
+        # Build mixture distributions for each cell :
+        for k in range(estim.ncells):
+            mixture = ot.Mixture(elements[k])
+            means = mixture.getMean()
+            stds = mixture.getStandardDeviation()
+            corrcoef = mixture.getPearsonCorrelation()[0, 1]
+            estim.grt_params[k, 2] = means[0]  # mean a-value
+            estim.grt_params[k, 3] = means[1]  # mean b-value
+            estim.grt_params[k, 4] = stds[0]  # std a-value
+            estim.grt_params[k, 5] = stds[1]  # std b-value
+            estim.grt_params[k, 6] = corrcoef  # Pearson correlation coefficient
+
+        # Save results from mixture distributions:
+        print('\n>> IMPORTANT NOTICE: \n>>Generate GMT-formatted files of GR parameters ONLY FOR aggregrated results\n')
     else:
-        # No prior on b-values:
-        print('>> No prior for b-values over the domain')
-        estim.file_prior_b = None
+        suffix4agg = ''
+    estim.write_to_csv(os.path.join(prms.output_dir, f'ab_values{suffix4agg}.txt'))
+    estim.write_to_GMT_ASCII_tables(directory=prms.output_dir, suffix=suffix4agg)
 
-    # Set options:
-    opts = {'skip_missing_priors': prms.skip_ab_if_missing_priors,
-           'auto_mc': prms.is_mc_automatic}
-
-    # Estimate G-R parameters over cells:
-    if args.rescale_to_cell_area:
-        estim.run(opts,
-                  print_warnings=False,
-                  b_truncation=args.b_truncation,
-                  target_area_km2=None)
-    else:
-        estim.run(opts,
-                  print_warnings=False,
-                  b_truncation=args.b_truncation,
-                  target_area_km2=prms.density_scaling_factor)
-
-    # Save results:
-    estim.write_to_csv(os.path.join(prms.output_dir, 'ab_values.txt'))
-    estim.write_to_GMT_ASCII_tables(directory=prms.output_dir)
