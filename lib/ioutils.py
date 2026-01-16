@@ -381,6 +381,7 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
             loaded_params = 'Mmin, Mmax and bin durations'
 
         mmin_mesg_displayed = False
+        mmax_mesg_displayed = False
         for i in range(ncells):
             j = np.where((np.abs(gridinfo[:, 0] - lons[i]) < coord_precision) & \
                          (np.abs(gridinfo[:, 1] - lats[i]) < coord_precision) )[0]
@@ -400,7 +401,7 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
                 cellinfo[i, 2] = gridinfo[j, 2]  # Copy Mmin values
             else:
                 if not mmin_mesg_displayed:
-                    print(f'{fmd_file}:: Overwrite MMIN with the value given in command-line ({mmin:.2f})')
+                    print(f'{fmd_file}:: WARNING! Overwrite MMIN with the value given in command-line ({mmin:.2f})')
                     mmin_mesg_displayed = True
                 cellinfo[i, 2] = mmin
 
@@ -414,7 +415,9 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
                 else:
                     cellinfo[i, 3] = np.inf  # untruncated G-R model
             else:
-                print(f'{fmd_file}:: Overwrite MMAX with the value given in command-line ({mmax:.2f})')
+                if not mmax_mesg_displayed:
+                    print(f'{fmd_file}:: WARNING! Overwrite MMAX with the value given in command-line ({mmax:.2f})')
+                    mmax_mesg_displayed = True
                 cellinfo[i, 3] = mmax
 
             # Update bin durations, if available in gridinfo:
