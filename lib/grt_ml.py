@@ -325,13 +325,6 @@ class Dutfoy2020_Estimator():
         dgdx = np.array([[1 / np.log(10), 0.0], [h, 1 / (mu[0] * np.log(10))]])
         G = self._fisher_information_matrix(np.array([mu[0], beta[0]]), std_beta=std_beta)
         cov = dgdx @ np.linalg.inv(G) @ dgdx.T
-        # Handle the rare case when covariance matrix elements are negative if a prior on beta is specified:
-        if (cov[0, 0] < 0) or (cov[1, 1] < 0):
-            print('\nWARNING: Due to negative diagonal element(s) in covariance matrix, will return ' +
-                  f'ABSOLUTE covariance matrix:')
-            print(f'Covariance matrix:\n{cov}')
-            print(f'Fisher Information Matrix:\n{G}')
-            cov = np.abs(cov)
         return cov
 
     def correlation_coef(self, ab: np.ndarray, std_b=np.inf):
