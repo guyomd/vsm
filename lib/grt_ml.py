@@ -294,9 +294,12 @@ class Dutfoy2020_Estimator():
         cotanh = 1 / np.tanh(beta * d)
         gamma = self.gamma(beta)
         alpha = self.alpha(beta)
+        # NB: Below recompute explicitely the leading constant of G11 because the equality "N * T1 / T0 = U1"
+        # (see eqn. 18) is not valid any more when a prior on beta is used:
+        U1_cst = self.N * T1[0] / T0[0]
 
         # Gamma(beta,beta):
-        G11 = 2 * U1[0] * (gamma / alpha - d * cotanh) \
+        G11 = 2 * U1_cst * (gamma / alpha - d * cotanh) \
               + self.N * ((gamma ** 2) / (alpha ** 2) + (T2[0] / T0[0]) + (d ** 2) * (cotanh ** 2)
                           - 2 * d * gamma * cotanh / alpha) + 1 / (std_beta**2)
         # Gamma(beta,mu):
