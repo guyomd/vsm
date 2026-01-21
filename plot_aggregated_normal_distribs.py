@@ -65,7 +65,7 @@ if __name__ == "__main__":
                         default=100)
 
     parser.add_argument("-r", "--range",
-                        help="Specify lower and upper limits for the X- and Y-axes. 4 arguments in the Xmin, Xmax, Ymin, Ymax order",
+                        help="Specify lower and upper limits for the graph axes. 4 arguments in the bmin, bmax, amin, amax order",
                         nargs=4,
                         type=float,
                         default=None)
