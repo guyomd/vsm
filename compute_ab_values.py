@@ -424,7 +424,7 @@ if __name__ == "__main__":
             estim.grt_params[k, 6] = corrcoef  # Pearson correlation coefficient
 
         # Save results from mixture distributions:
-        print('\n>> IMPORTANT NOTICE: \n>>Generate GMT-formatted files of GR parameters ONLY FOR aggregrated results\n')
+        print('\n>> Now generate GMT-formatted polygon files of GR parameters ONLY FOR aggregrated results:')
     else:
         suffix4agg = ''
     estim.write_to_csv(os.path.join(prms.output_dir, f'ab_values{suffix4agg}.txt'))
