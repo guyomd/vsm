@@ -402,8 +402,9 @@ if __name__ == "__main__":
         if args.from_bootstrapped_results:
             for k in  range(estim.ncells):
                 lon, lat, a, b, stda, stdb, rho, mc, target_area = estim.grt_params[k, :]
-                cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
-                elements[k].append(ot.Normal([a, b], cov))
+                if not np.isnan(a):
+                    cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
+                    elements[k].append(ot.Normal([a, b], cov))
         else:
             # Quit for loop if not using bootstrapped results
             break
