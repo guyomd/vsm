@@ -201,7 +201,7 @@ if __name__ == "__main__":
         xp, yp = polygon.exterior.xy
         fig.plot(x=xp,
                  y=yp,
-                 style="s0.1c",
+                 close=True,
                  pen="0.2p,black,solid",
                  fill="red")
 
