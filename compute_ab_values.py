@@ -210,14 +210,35 @@ class TruncatedGRestimator():
                         self.grt_params[i, :] = np.array([lon, lat] + [np.nan] * 7)
                         continue
                     else:
-                        #a, b, rho, cov = ll.find_optimal_ab_no_prior()
-                        a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
+                        try:
+                            #a, b, rho, cov = ll.find_optimal_ab_no_prior()
+                            a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
+                        except ValueError:
+                            # ValueError: f(a) and f(b) must have different signs
+                            a = np.nan
+                            b = np.nan
+                            rho = np.nan
+                            cov = np.array([[np.nan, np.nan], [np.nan, np.nan]])
                 else:
-                    #a, b, rho, cov = ll.find_optimal_ab_with_normal_prior(bmean, bstd)
-                    a, b, rho, cov = ab_estimation_method(bmean, bstd, bounds_b=b_truncation)
+                    try:
+                        #a, b, rho, cov = ll.find_optimal_ab_with_normal_prior(bmean, bstd)
+                        a, b, rho, cov = ab_estimation_method(bmean, bstd, bounds_b=b_truncation)
+                    except ValueError:
+                        # ValueError: f(a) and f(b) must have different signs
+                        a = np.nan
+                        b = np.nan
+                        rho = np.nan
+                        cov = np.array([[np.nan, np.nan], [np.nan, np.nan]])
             else:
-                #a, b, rho, cov = ll.find_optimal_ab_no_prior()
-                a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
+                try:
+                    #a, b, rho, cov = ll.find_optimal_ab_no_prior()
+                    a, b, rho, cov = ab_estimation_method(bounds_b=b_truncation)
+                except ValueError:
+                    # ValueError: f(a) and f(b) must have different signs
+                    a = np.nan
+                    b = np.nan
+                    rho = np.nan
+                    cov = np.array([[np.nan, np.nan], [np.nan, np.nan]])
 
             stdb = np.sqrt(cov[0, 0])
             stda = np.sqrt(cov[1, 1])
@@ -402,8 +423,9 @@ if __name__ == "__main__":
         if args.from_bootstrapped_results:
             for k in  range(estim.ncells):
                 lon, lat, a, b, stda, stdb, rho, mc, target_area = estim.grt_params[k, :]
-                cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
-                elements[k].append(ot.Normal([a, b], cov))
+                if not np.isnan(a):
+                    cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
+                    elements[k].append(ot.Normal([a, b], cov))
         else:
             # Quit for loop if not using bootstrapped results
             break
@@ -413,15 +435,16 @@ if __name__ == "__main__":
         
         # Build mixture distributions for each cell :
         for k in range(estim.ncells):
-            mixture = ot.Mixture(elements[k])
-            means = mixture.getMean()
-            stds = mixture.getStandardDeviation()
-            corrcoef = mixture.getPearsonCorrelation()[0, 1]
-            estim.grt_params[k, 2] = means[0]  # mean a-value
-            estim.grt_params[k, 3] = means[1]  # mean b-value
-            estim.grt_params[k, 4] = stds[0]  # std a-value
-            estim.grt_params[k, 5] = stds[1]  # std b-value
-            estim.grt_params[k, 6] = corrcoef  # Pearson correlation coefficient
+            if len(elements[k]) > 0:
+                mixture = ot.Mixture(elements[k])
+                means = mixture.getMean()
+                stds = mixture.getStandardDeviation()
+                corrcoef = mixture.getPearsonCorrelation()[0, 1]
+                estim.grt_params[k, 2] = means[0]  # mean a-value
+                estim.grt_params[k, 3] = means[1]  # mean b-value
+                estim.grt_params[k, 4] = stds[0]  # std a-value
+                estim.grt_params[k, 5] = stds[1]  # std b-value
+                estim.grt_params[k, 6] = corrcoef  # Pearson correlation coefficient
 
         # Save results from mixture distributions:
         print('\n>> Now generate GMT-formatted polygon files of GR parameters ONLY FOR aggregrated results:')
