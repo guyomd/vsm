@@ -37,7 +37,7 @@ def convert_to_EPSG(geom, in_epsg="EPSG:4326", out_epsg="EPSG=8857"):
 
 
 ## GEOSPATIAL OPERATIONS: #####################################################
-def remove_duplicate_points(multipoint):
+def remove_duplicate_points(multipoint, verbose=False):
     """
     Function to check for duplicates and invalid points
     """
@@ -48,7 +48,8 @@ def remove_duplicate_points(multipoint):
     # Check for duplicates
     if len(unique_list) != len(points):
         duplicates = set(p for p in points if points.count(p) > 1)
-        print(f"Duplicate points found: {duplicates}")
+        if verbose:
+            print(f"Duplicate points found: {duplicates}")
 
     # Validate points (should already be Point instances, but just in case)
     invalid_points = [p for p in points if not isinstance(p, Point)]

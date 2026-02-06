@@ -227,6 +227,7 @@ class VoronoiSmoothingAlgorithm:
         Bootstrap sampling of 1 input catalogue sample, taking into account the Poisson-process variability in total
         events count and in location uncertainties.
         """
+        start = time.time()
         nev0 = len(mp_epic_m.geoms)
         nev = rng.poisson(lam=nev0)  # Random Poisson variate for total events count
         indices = rng.choice(nev0, size=nev)
@@ -252,6 +253,8 @@ class VoronoiSmoothingAlgorithm:
         bs_weights = bs_weights[i_uniq] * n_uniq
         bs_mags = bs_mags[i_uniq]
         bs_dates = bs_dates[i_uniq]
+        end = time.time()
+        print(f'Time elapsed for catalogue resampling: {end - start:.3f}')
         return bs_mp_epic_m, bs_mags, bs_dates, bs_weights
 
     def perturb_magnitudes(self, mags, uncert: dict, rng, correct_bias=True, b_value=1.0):
