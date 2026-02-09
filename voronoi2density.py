@@ -61,7 +61,7 @@ class VoronoiSmoothingAlgorithm:
     def create_density_maps_for_all_bins(self, bs_index, magbins, mp_epic_m, mags, dates, weights, bounds_m,
                                          cells, cells_m, counts, cell_densities_km2,
                                          suffix, outputdir, is_catalogue_bootstrapped, do_save_results):
-        if do_bootstrap_catalog:
+        if is_catalogue_bootstrapped:
             verbose = False
         else:
             verbose = True
