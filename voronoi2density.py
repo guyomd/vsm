@@ -416,23 +416,14 @@ class VoronoiSmoothingAlgorithm:
                  + 'perturbations (loc, mag & counts), please be patient!...')
             sampling_start = time.time()
             rng = np.random.default_rng()
-            mp_epic_m_samples = []
-            mags_samples = []
-            dates_samples = []
-            weights_samples = []
-            for i in range(self.prms.nb_bootstrap_samples):
-                mp_epic_m_samples, mags_samples, dates_samples, weights_samples = \
-                    self.bootstrap_catalogue_sample(mp_epic_m,
-                                                    mags,
-                                                    dates,
-                                                    weights,
-                                                    uncert,
-                                                    rng,
-                                                    num=self.prms.nb_bootstrap_samples)
-                mp_epic_m_samples.append(e)
-                mags_samples.append(m)
-                dates_samples.append(d)
-                weights_samples.append(w)
+            mp_epic_m_samples, mags_samples, dates_samples, weights_samples = \
+                self.bootstrap_catalogue_sample(mp_epic_m,
+                                                mags,
+                                                dates,
+                                                weights,
+                                                uncert,
+                                                rng,
+                                                num=self.prms.nb_bootstrap_samples)
             sampling_end = time.time()
             print(f'   Done in {sampling_end - sampling_start} s.')
 
