@@ -1,6 +1,7 @@
 from importlib.metadata import version
 import numpy as np
 import pyproj
+from collections import Counter
 from shapely import (MultiLineString, 
                      Point,
                      MultiPoint, 
@@ -41,24 +42,20 @@ def remove_duplicate_points(multipoint, verbose=False):
     """
     Function to check for duplicates and invalid points
     """
-    points = list(multipoint.geoms)  # Extract points from MultiPoint
-    unique_points = MultiPoint(set(points))  # Find unique points
-    unique_list = list(unique_points.geoms)
+    coords = [(geom.x, geom.y) for geom in multipoint.geoms]
+    index_dict = {}
+    for index, coord in enumerate(coords):
+        if coord in index_dict:
+            # Keep only index of the first point occurrence when a similar point already exists in index_dict:
+            pass
+        else:
+            index_dict[coord] = index
 
-    # Check for duplicates
-    if len(unique_list) != len(points):
-        duplicates = set(p for p in points if points.count(p) > 1)
-        if verbose:
-            print(f"Duplicate points found: {duplicates}")
-
-    # Validate points (should already be Point instances, but just in case)
-    invalid_points = [p for p in points if not isinstance(p, Point)]
-    if invalid_points:
-        raise ValueError(f"Invalid points found: {invalid_points}")
-    i_uniq = np.array([points.index(p) for p in unique_list])
-    n_uniq = np.array([points.count(p) for p in unique_list])
+    coords_counts = Counter(coords)
+    n_uniq = list(coords_counts.values())
+    unique_points = MultiPoint(coords_counts.keys())
+    i_uniq = [index_dict[coord] for coord in coords_counts.keys()]
     return unique_points, i_uniq, n_uniq
-
 
 def eqdensity_per_polygon(polygons, weights: np.ndarray, scaling2unit=1.0, log_values=False):
     """

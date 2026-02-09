@@ -59,13 +59,12 @@ class VoronoiSmoothingAlgorithm:
         return mp_epic, mp_epic_m, dates, mags, weights, uncert, bounds, bounds_m, magbins
 
     def create_density_maps_for_all_bins(self, bs_index, magbins, mp_epic_m, mags, dates, weights, bounds_m,
-                                         cells, cells_m, uncert, counts, cell_densities_km2,
-                                         suffix, outputdir, do_bootstrap_catalog, do_save_results):
+                                         cells, cells_m, counts, cell_densities_km2,
+                                         suffix, outputdir, is_catalogue_bootstrapped, do_save_results):
         if do_bootstrap_catalog:
             verbose = False
         else:
             verbose = True
-        rng = np.random.default_rng()  # Generator must be inside functions to ensure independent realizations
         # when multithreading is activated
         col_titles = ['lon', 'lat']
         col_index = 2
@@ -80,9 +79,7 @@ class VoronoiSmoothingAlgorithm:
                                                        weights,
                                                        bounds_m,
                                                        cells_m,
-                                                       rng,
-                                                       uncert=uncert,
-                                                       bootstrap=do_bootstrap_catalog)
+                                                       bootstrap=is_catalogue_bootstrapped)
             if outputs is None:
                 continue  # When no event in current bin
             else:
@@ -126,7 +123,7 @@ class VoronoiSmoothingAlgorithm:
         return bs_index, counts, cell_densities_km2, col_titles
 
     def density_grid_for_single_bin(self, magbin, mp_epic_m, mags, dates, evt_weights, bounds_m, cells_m,
-                                    rng, uncert=None, bootstrap=False):
+                                    bootstrap=False):
         """
             Core routines implementing the following tasks:
             1 - Select only events included in the magnitude bin range (and in the time period, to be removed)
@@ -143,10 +140,6 @@ class VoronoiSmoothingAlgorithm:
         duration = magbin[4] - magbin[3]
         if verbose:
             print(f'>> bin {index}: M in [{magbin[1]}; {magbin[2]}[  ({duration} years)')
-
-        # If requested, apply bootstrapping (NB: when requested, the perturbation of magnitudes occurs earlier):
-        if bootstrap:
-            mp_epic_m, mags, dates, evt_weights = self.bootstrap_catalogue_sample(mp_epic_m, mags, dates, evt_weights, uncert, rng)
 
         # Keep only events with magnitude included in the current bin, and located within the bounding box:
         mp_epic_bin, m_bin, t_bin, w_bin = select_events(mp_epic_m, mags, dates, evt_weights, bounds_m, magbin)
@@ -222,37 +215,69 @@ class VoronoiSmoothingAlgorithm:
         cell_densities_km2 *= self.prms.density_scaling_factor
         return counts, cell_densities_km2, vor_diagram, vor_densities_km2, perturbed_catalogue
 
-    def bootstrap_catalogue_sample(self, mp_epic_m, mags, dates, weights, uncert: dict, rng):
+    def bootstrap_catalogue_sample(self, mp_epic_m, mags, dates, weights, uncert: dict, rng, num=1):
         """
         Bootstrap sampling of 1 input catalogue sample, taking into account the Poisson-process variability in total
         events count and in location uncertainties.
         """
+        mp_epic_m_samples = []
+        mags_samples = []
+        dates_samples = []
+        weights_samples = []
         nev0 = len(mp_epic_m.geoms)
-        nev = rng.poisson(lam=nev0)  # Random Poisson variate for total events count
-        indices = rng.choice(nev0, size=nev)
-        # Do not perturb occurrence times and magnitudes
-        # NB: Magnitudes already perturbed in method self.perturb_catalogue_mags():
-        bs_dates = dates[indices]
-        bs_mags = mags[indices]
-        bs_weights = weights[indices]
-        pts = []
-        for i in indices:
+
+        # Randomly perturb locations for all events (NUM samples):
+        x_samples = np.zeros((nev0, num))
+        y_samples = np.zeros((nev0, num))
+        for i in tqdm(range(nev0), desc='Locations ', leave=True):
             x_km, y_km = mp_epic_m.geoms[i].coords.xy
-            x, y = random_locations_from_ellipsoid(x_km,
-                                                   y_km,
-                                                   uncert['loc_smaj'][i],
-                                                   uncert['loc_smin'][i],
-                                                   uncert['loc_az'][i],
-                                                   n=1,
-                                                   rng=rng)
-            pts.append(Point((x, y)))
-        bs_mp_epic_m = MultiPoint(pts)
-        # Remove eventual duplicate points (but update their weight accordingly):
-        bs_mp_epic_m, i_uniq, n_uniq = remove_duplicate_points(bs_mp_epic_m)
-        bs_weights = bs_weights[i_uniq] * n_uniq
-        bs_mags = bs_mags[i_uniq]
-        bs_dates = bs_dates[i_uniq]
-        return bs_mp_epic_m, bs_mags, bs_dates, bs_weights
+            x_samples[i, :], y_samples[i, :] = random_locations_from_ellipsoid(
+                x_km,
+                y_km,
+                uncert['loc_smaj'][i],
+                uncert['loc_smin'][i],
+                uncert['loc_az'][i],
+                n=num,
+                rng=rng)
+
+        # Draw a random number of events taken as a Poisson variable with mean NEV0:
+        desc_str = 'Counts '
+        if self.prms.perturb_magnitudes:
+            desc_str += '& magnitudes'
+        for j in tqdm(range(num), desc=desc_str, leave=True):
+            nev = rng.poisson(lam=nev0)  # Random Poisson variate for total events count
+            indices = rng.choice(nev0, size=nev)
+
+            pts = []
+            for i in indices:
+                pts.append(Point((x_samples[i, j], y_samples[i, j])))
+            bs_mp_epic_m = MultiPoint(pts)
+
+            # If required, do perturb magnitudes:
+            if self.prms.perturb_magnitudes:
+                bs_mags = self.perturb_magnitudes(
+                    mags,
+                    uncert,
+                    rng,
+                    correct_bias=True,
+                    b_value=self.prms.b_value_for_correction_term)
+            else:
+                bs_mags = mags
+            bs_mags = bs_mags[indices]
+
+            # Do NOT perturb occurrence times:
+            bs_dates = dates[indices]
+            bs_weights = weights[indices]
+
+            # Remove eventual duplicate points (but update their weight accordingly):
+            bs_mp_epic_m, i_uniq, n_uniq = remove_duplicate_points(bs_mp_epic_m)
+            mp_epic_m_samples.append(bs_mp_epic_m)
+            bs_weights = bs_weights[i_uniq] * np.array(n_uniq)
+            weights_samples.append(bs_weights)
+            mags_samples.append(bs_mags[i_uniq])
+            dates_samples.append(bs_dates[i_uniq])
+        return mp_epic_m_samples, mags_samples, dates_samples, weights_samples
+
 
     def perturb_magnitudes(self, mags, uncert: dict, rng, correct_bias=True, b_value=1.0):
         """
@@ -349,7 +374,7 @@ class VoronoiSmoothingAlgorithm:
 
     def run(self):
         # Load input data:
-        mp_epic, mp_epic_m0, dates0, mags0, weights, uncert, bounds, bounds_m, magbins = self.load_input_data()
+        mp_epic, mp_epic_m, dates, mags, weights, uncert, bounds, bounds_m, magbins = self.load_input_data()
 
         # Build mesh (regular for zoneless, or polygons for area-sources):
         if self.prms.mesh_type == 'regular':
@@ -372,11 +397,6 @@ class VoronoiSmoothingAlgorithm:
         outputdir = self.prms.output_dir
         suffix = ''
 
-        # Initialize dates, locations and magnitudes to catalogue values:
-        dates = dates0
-        mp_epic_m = mp_epic_m0
-        mags = mags0
-
         # Loop over magnitude bins (and boostrap realizations, if requested):
         if self.prms.nb_bootstrap_samples == 0:
             self.prms.nb_parallel_tasks = 1  # Force run on single core
@@ -390,6 +410,32 @@ class VoronoiSmoothingAlgorithm:
                                             (self.prms.nb_bootstrap_samples, 1, 1))
             bs_nz = np.floor(np.log10(self.prms.nb_bootstrap_samples) + 1.0).astype(int)
             outputdir = os.path.join(self.prms.output_dir, 'bootstrap')
+
+            # Randomize catalogue (loc, mags & counts):
+            print(f'>> Preparing {self.prms.nb_bootstrap_samples} random catalogue '
+                 + 'perturbations (loc, mag & counts), please be patient!...')
+            sampling_start = time.time()
+            rng = np.random.default_rng()
+            mp_epic_m_samples = []
+            mags_samples = []
+            dates_samples = []
+            weights_samples = []
+            for i in range(self.prms.nb_bootstrap_samples):
+                mp_epic_m_samples, mags_samples, dates_samples, weights_samples = \
+                    self.bootstrap_catalogue_sample(mp_epic_m,
+                                                    mags,
+                                                    dates,
+                                                    weights,
+                                                    uncert,
+                                                    rng,
+                                                    num=self.prms.nb_bootstrap_samples)
+                mp_epic_m_samples.append(e)
+                mags_samples.append(m)
+                dates_samples.append(d)
+                weights_samples.append(w)
+            sampling_end = time.time()
+            print(f'   Done in {sampling_end - sampling_start} s.')
+
             # Use parallelization:
             if (self.prms.nb_parallel_tasks is None):
                 ntasks = min(cpu_count() - 1, self.prms.nb_bootstrap_samples)
@@ -399,17 +445,23 @@ class VoronoiSmoothingAlgorithm:
             print(f'>> Number of parallel processes: {ntasks}')
             with Pool(ntasks) as p:
                 args = []
-                rng = np.random.default_rng()
                 for i in range(self.prms.nb_bootstrap_samples):
-                    if self.prms.perturb_magnitudes:
-                        mags = self.perturb_magnitudes(mags0,
-                                                       uncert,
-                                                       rng,
-                                                       correct_bias=True,
-                                                       b_value=self.prms.b_value_for_correction_term)
                     suffix = f'_bs_{i + 1:0{bs_nz}d}'
-                    args.append([i + 1, magbins, mp_epic_m, mags, dates, weights, bounds_m, cells, cells_m,
-                                 uncert, counts, cell_densities_km2, suffix, outputdir, True,
+                    # Here feed arguments with previously perturbed catalogues (loc & mags)
+                    args.append([i + 1,
+                                 magbins,
+                                 mp_epic_m_samples[i],
+                                 mags_samples[i],
+                                 dates_samples[i],
+                                 weights_samples[i],
+                                 bounds_m,
+                                 cells,
+                                 cells_m,
+                                 counts,
+                                 cell_densities_km2,
+                                 suffix,
+                                 outputdir,
+                                 True,
                                  self.prms.save_realizations])
 
                 for result in p.starmap(self.create_density_maps_for_all_bins,
