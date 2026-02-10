@@ -270,8 +270,9 @@ class TruncatedGRestimator():
         Save results in CSV format
         """
         self.file_csv = filename
+        is_valid = np.logical_not(np.isnan(self.grt_params[:, 2]))
         np.savetxt(filename,
-                   self.grt_params, 
+                   self.grt_params[is_valid, :],
                    header='; '.join(['lon', 'lat', 'a', 'b', 'da', 'db', 'rho_ab', 'mc', 'area_in_km2']),
                    delimiter='; ')
         print(f'{filename}:: saved Gutenberg-Richter parameters for {self.ncells} cells')
