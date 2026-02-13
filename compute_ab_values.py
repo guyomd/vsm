@@ -150,7 +150,7 @@ class TruncatedGRestimator():
         print(f'>> Kept {ncells} cells from the original grid of {n_init} cells')
         return bin_durations, cellinfo, densities, prior_b, i_kept, i_removed
 
-    def _ML_estimation(self, skip_missing_priors=False, auto_mc=False, b_truncation=None, scaling_area_km2=None):
+    def _ML_estimation(self, skip_missing_priors=False, auto_mc=False, b_truncation=None):
         """
         Maximum-likelihood estimation of (a, b) parameters (Dutfoy, 2021; Weichert, 1980)
 
@@ -201,7 +201,9 @@ class TruncatedGRestimator():
                 elif (len(input_args) > 0) and (bounds_b is not None):
                     return ll.find_optimal_ab_with_truncated_normal_prior(*input_args, bounds_b=bounds_b)
 
+            has_prior_on_b = False
             if isinstance(self.file_prior_b, str):
+                # When self.file_prior_b is either "command_line" or path to an existing file:
                 bmean = self.prior_b[i, 0]
                 bstd = self.prior_b[i, 1]
                 if ((bmean == -9.0) and (bstd == -9.0)) or ((bmean == 0.0) and (bstd == 0.0)):
@@ -220,6 +222,7 @@ class TruncatedGRestimator():
                             rho = np.nan
                             cov = np.array([[np.nan, np.nan], [np.nan, np.nan]])
                 else:
+                    has_prior_on_b = True
                     try:
                         #a, b, rho, cov = ll.find_optimal_ab_with_normal_prior(bmean, bstd)
                         a, b, rho, cov = ab_estimation_method(bmean, bstd, bounds_b=b_truncation)
@@ -240,19 +243,13 @@ class TruncatedGRestimator():
                     rho = np.nan
                     cov = np.array([[np.nan, np.nan], [np.nan, np.nan]])
 
-            stdb = np.sqrt(cov[0, 0])
+            stdb = np.sqrt(cov[0, 0])   # Uncertainties for counts/densities rescaled at the polygon area !!
             stda = np.sqrt(cov[1, 1])
-
-            # Eventually, scale a-value to target area (do NOT scale stda, stdb and b!):
-            if scaling_area_km2 is None:
-                target_area = self.areas[i]
-            else:
-                a = np.log10(scaling_area_km2 / self.areas[i] * 10 ** (a))
-                target_area = scaling_area_km2
+            target_area = self.areas[i]
             self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, target_area])
 
 
-    def run(self, options, print_warnings=False, b_truncation=None, target_area_km2=None):
+    def run(self, options, print_warnings=False, b_truncation=None):
         """
         Evaluate a and b parameters of the truncated GR relationship in each cell
         """
@@ -262,20 +259,23 @@ class TruncatedGRestimator():
 
         self._ML_estimation(skip_missing_priors=options['skip_missing_priors'],
                             auto_mc=options['auto_mc'],
-                            b_truncation=b_truncation,
-                            scaling_area_km2=target_area_km2)
+                            b_truncation=b_truncation)
 
     def write_to_csv(self, filename):
         """
         Save results in CSV format
         """
         self.file_csv = filename
-        is_valid = np.logical_not(np.isnan(self.grt_params[:, 2]))
+        is_valid = np.logical_not(np.isnan(self.grt_params[:, 2])
+                                  & np.isnan(self.grt_params[:, 4])
+                                  & np.isnan(self.grt_params[:, 5])
+                                  & np.isnan(self.grt_params[:, 6])
+                                  )
         np.savetxt(filename,
                    self.grt_params[is_valid, :],
                    header='; '.join(['lon', 'lat', 'a', 'b', 'da', 'db', 'rho_ab', 'mc', 'area_in_km2']),
                    delimiter='; ')
-        print(f'{filename}:: saved Gutenberg-Richter parameters for {self.ncells} cells')
+        print(f'{filename}:: saved Gutenberg-Richter parameters for {is_valid.sum()} valid cells (among {self.ncells})')
     
     def write_to_GMT_ASCII_tables(self, directory='.', suffix=''):
         """
@@ -316,12 +316,6 @@ if __name__ == "__main__":
                         help="Specify homogeneous prior on b (mean, std. dev.) over the spatial domain.",
                         nargs=2,
                         type=float)
-
-    parser.add_argument("-s", "--rescale-to-cell-area",
-                        help='If set, rescale densities (and a-values) to each cell/polygon area. ' \
-                             + 'Otherwise, keep parameters scaled for the area specified (in km^2) ' \
-                             + 'in configuration file (see parameter "density_scaling_factor").',
-                        action='store_true')
 
     parser.add_argument("--b-truncation",
                         help="Set lower and upper truncation for b-values",
@@ -405,16 +399,9 @@ if __name__ == "__main__":
                'auto_mc': prms.is_mc_automatic}
 
         # Estimate G-R parameters over all cells:
-        if args.rescale_to_cell_area:
-            estim.run(opts,
-                      print_warnings=False,
-                      b_truncation=args.b_truncation,
-                      target_area_km2=None)
-        else:
-            estim.run(opts,
-                      print_warnings=False,
-                      b_truncation=args.b_truncation,
-                      target_area_km2=prms.density_scaling_factor)
+        estim.run(opts,
+                  print_warnings=False,
+                  b_truncation=args.b_truncation)
 
         if args.from_bootstrapped_results:
             # Save results individually:
