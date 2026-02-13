@@ -24,7 +24,7 @@ class ParameterSet():
         self.is_verbose = False
         self.fmd_info_file = None
         self.prior_b_info_file = None
-        self.density_scaling_factor = 1.0
+        self.density_scaling_factor = 1.0  # Warning: Target scaling area in km^2
         self.is_mc_automatic = False
         self.nb_bootstrap_samples = 0  # When 0: Bootstrap resampling deactivated
         self.perturb_magnitudes = False  # Activate/De-activate the random perturbation of magnitudes

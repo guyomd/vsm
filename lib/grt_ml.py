@@ -66,6 +66,8 @@ class Dutfoy2020_Estimator():
         self.N = counts.sum()
         self.m0 = m0
         self.mmax = mmax
+        if np.isinf(self.mmax):
+            raise ValueError("mmax cannot be infinity")
         self.dm = dm
         self.delta = self.dm / 2
 
@@ -322,7 +324,7 @@ class Dutfoy2020_Estimator():
         G = self._fisher_information_matrix(np.array([mu, beta]), std_beta=std_beta)
         return np.linalg.inv(G)  # [[Var(beta), Cov(mu, beta)], [Cov[mu, beta), Var(mu)]]
 
-    def covariance_matrix(self, ab: np.ndarray, std_b=np.inf, scaling_on_mu=1.0):
+    def covariance_matrix(self, ab: np.ndarray, std_b=np.inf):
         """
         Compute covariance matrix around solution parameters (a, b)
         for the truncated Gutenberg-Richter model.
@@ -335,15 +337,7 @@ class Dutfoy2020_Estimator():
               (self.mmax * np.exp(-beta[0] * self.mmax)) / (1 - np.exp(-beta[0] * self.mmax))
               ) / np.log(10)
         dgdx = np.array([[1 / np.log(10), 0.0], [h, 1 / (mu[0] * np.log(10))]])
-        """
-        G = self._fisher_information_matrix(np.array([mu[0], beta[0]]), std_beta=std_beta)
-        cov = dgdx @ np.linalg.inv(G) @ dgdx.T
-        """
         cov_mubeta = self._covariance_matrix_mubeta((mu[0], beta[0]), std_beta=std_beta)
-        if scaling_on_mu != 1.0:
-            cov_mubeta[1, 1] *= scaling_on_mu ** 2.0
-            cov_mubeta[0, 1] *= scaling_on_mu
-            cov_mubeta[1, 0] *= scaling_on_mu
         cov = dgdx @ cov_mubeta @ dgdx.T
         return cov
 

@@ -77,14 +77,18 @@ if __name__ == "__main__":
                         type=float,
                         default=None)
 
-    parser.add_argument("-s", "--scale-to-reference-area",
-                        help='Scale plotted values according to formula log10(10^(value) * fixed_area / cell_area) '
-                            + 'where fixed_area is either provided (in km^2) as a command-line argument or as parameter '
-                            + '"density_scaling_factor" in the configuration file.',
-                        nargs="?",
+    parser.add_argument("-s", "--scale-to-polygon-area",
+                        help='Scale plotted values according to individual cell areas, using formula '
+                            + 'log10(10^(value) * cell_area / density_scaling_area) where variable "density_scaling_area"'
+                            + 'is defined in the confifguration file (note: default is 1.0 km^2)',
+                        action='store_true')
+
+    parser.add_argument("-S", "--scale-to-reference-area",
+                        help='Scale plotted values to an arbitrary reference area, using formula '
+                             + 'log10(10^(value) * ref_area / cell_area) where variable "ref_area"'
+                             + 'is given in argument and expressed in km^2',
                         type=float,
-                        const=True,
-                        default=False)
+                        default=None)
 
     parser.add_argument("-t", "--title",
                         help="Figure title")
@@ -139,16 +143,6 @@ if __name__ == "__main__":
     else:
         mp_epic_sel = None
 
-    # Account for optional scaling factor:
-    if isinstance(args.scale_to_reference_area, float):
-        # Scaling area specified as command-line argument:
-        fixed_area = args.scale_to_reference_area  # in km^2
-    elif args.scale_to_reference_area is True:
-        # No command-line argument, use value stored as parameter "density_scaling_factor":
-        fixed_area = prms.density_scaling_factor  # in km^2
-    else:
-        fixed_area = None
-
     for inputfile in args.files:
         print('\n' + inputfile)
         prefix, ext = os.path.splitext(os.path.basename(inputfile))
@@ -184,16 +178,33 @@ if __name__ == "__main__":
             change_zvalue_in_polygon_file(inputfile, tmpfiles[-1], zvalues)
             inputfile = tmpfiles[-1]
 
-        # Scale Z-values for a fixed reference area:
-        if fixed_area is not None:
-            print(f'>> Scale Z-values for a reference area of {fixed_area} km^2')
+        # Eventually scale Z-values to individual polygons areas:
+        if args.scale_to_polygon_area and isinstance(args.scale_to_reference_area, float):
+            raise ValueError('Cannot set both options "-s" and "-S" at the same time.')
+
+        if args.scale_to_polygon_area and (args.scale_to_reference_area is None):
+            print('>> Divide Z-values by individual polygons areas')
             pols, zvalues = load_polygons(inputfile)
             pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
             polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
-            zvalues = np.log10( np.power(10, zvalues) * fixed_area / polareas )
+            zvalues = np.log10( np.power(10, zvalues) * polareas / prms.density_scaling_factor )
             tmpfiles.append(prefix + "_a.tmp")
             change_zvalue_in_polygon_file(inputfile, tmpfiles[-1], zvalues)
             inputfile = tmpfiles[-1]
+
+        elif isinstance(args.scale_to_reference_area, float) and (not args.scale_to_polygon_area):
+            ref_area = args.scale_to_reference_area
+            print(f'>> Scale Z-values to reference area of {ref_area} km^2')
+            pols, zvalues = load_polygons(inputfile)
+            pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
+            polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+            zvalues = np.log10(np.power(10, zvalues) * ref_area / polareas)
+            tmpfiles.append(prefix + "_a.tmp")
+            change_zvalue_in_polygon_file(inputfile, tmpfiles[-1], zvalues)
+            inputfile = tmpfiles[-1]
+
+        else:
+            print(f'>> Plot Z-values as stored in result files')
 
         # Load colormap limits:
         if args.range is None:

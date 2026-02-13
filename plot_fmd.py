@@ -38,15 +38,14 @@ if __name__ == "__main__":
                         help="Output directory for figures",
                         default=None)
 
-    parser.add_argument("-s", "--rescale-to-cell-area",
-                        help='If set, rescale densities (and a-values) to each cell/polygon area. ' \
-                             + 'Otherwise, keep parameters scaled to the fixed area (in km^2) ' \
-                             + 'given in parameter "density_scaling_factor".',
-                        action='store_true')
-
     parser.add_argument('--no-model',
                         help="Do not overlay FMD model adjustment",
                         action='store_true')
+
+    parser.add_argument("-p", "--from-bootstrapped-results",
+                        help="Get a- and b-values from the mixture distribution aggregated from bivariate normal "\
+                            + "distributions of bootstrapped results",
+                       action="store_true")
 
     args = parser.parse_args()
     
@@ -75,21 +74,25 @@ if __name__ == "__main__":
     # Load seismicity rates and truncated G-R parameters:
     inputfile = os.path.join(prms.output_dir, 'gridded_densities.txt')
     estim = TruncatedGRestimator()
-    if args.rescale_to_cell_area:
-        pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
-        pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
-        polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
-        area_scaling = 1 / prms.density_scaling_factor
-    else:
-        area_scaling = 1.0
-        polareas = None
+    # --> Rescale counts/densities at individual cell areas:
+    pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
+    pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
+    polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+    area_scaling = 1 / prms.density_scaling_factor
     estim.load_densities(inputfile,
                          scaling_factor=area_scaling,
                          rescale_to_polygons_areas=polareas)
     estim.load_bins(prms.bins_file)
     minmags = estim.bins['mins']
     maxmags = estim.bins['maxs']
-    grt_prms = np.loadtxt(os.path.join(prms.output_dir, 'ab_values.txt'), delimiter=';')
+
+    # Load (a, b) parameters values:
+    # --> NB: values obtained for counts/densities already scaled at individual cell areas!
+    if args.from_bootstrapped_results:
+        grt_prms = np.loadtxt(os.path.join(prms.output_dir, 'ab_values_aggregated.txt'), delimiter=';')
+    else:
+        grt_prms = np.loadtxt(os.path.join(prms.output_dir, 'ab_values.txt'), delimiter=';')
+
     if estim.cellinfo is None:
         xy = grt_prms[:, :2]  # Longitudes, Latitudes
     else:
