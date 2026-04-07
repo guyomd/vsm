@@ -345,7 +345,7 @@ if __name__ == "__main__":
     prms.load_settings(args.configfile)
 
     # Load data:
-    if args.uncertainty in ['bootstrap', 'mixture']:
+    if args.uncertainty[0] in ['bootstrap', 'mixture']:
         import openturns as ot
         outputdir = os.path.join(prms.output_dir, 'bootstrap')
         filelist = glob.glob(os.path.join(prms.output_dir, 'bootstrap', 'gridded_densities_bs_*.txt'))
@@ -363,11 +363,7 @@ if __name__ == "__main__":
     estim.areas = polareas
 
     # Loop over all 'gridded_densities*.txt' files:
-    if args.uncertainty == "mixture":
-        elements =[[] for k in range(estim.ncells)]
-    elif args.uncertainty == "bootstrap":
-        elements =[[[],[]] for k in range(estim.ncells)]
-
+    first_pass = True
     for inputfile in filelist:
         print(f'\n### PROCESSING FILE {inputfile}...');
         suffix4csv = os.path.basename(inputfile).replace('gridded_densities','').replace('.txt','')  # '_bs_XX' or '' file suffixes
@@ -376,7 +372,12 @@ if __name__ == "__main__":
         estim.load_densities(inputfile,
                              scaling_factor=area_scaling,
                              rescale_to_polygons_areas=polareas)
-
+        if first_pass:
+            first_pass = False
+            if args.uncertainty[0] == "mixture":
+                elements = [[] for k in range(estim.ncells)]
+            elif args.uncertainty[0] == "bootstrap":
+                elements = [[[], []] for k in range(estim.ncells)]
 
         estim.load_bins(prms.bins_file)
 
@@ -405,26 +406,27 @@ if __name__ == "__main__":
                   print_warnings=False,
                   b_truncation=args.b_truncation)
 
-        if args.uncertainty in ['bootstrap', 'mixture']:
+        if args.uncertainty[0] in ['bootstrap', 'mixture']:
             # Save results of bootstrapped realizations individually:
             estim.write_to_csv(os.path.join(outputdir, f'ab_values{suffix4csv}.txt'))
 
         # Compute temporary results for current bootstrapped realization (if required) Accumulate bootstrapped normal distributions of results for each cell:
-        if args.uncertainty == 'mixture':
+        if args.uncertainty[0] == 'mixture':
             for k in  range(estim.ncells):
                 lon, lat, a, b, stda, stdb, rho, mc, target_area = estim.grt_params[k, :]
                 if not np.isnan(a):
                     cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
                     elements[k].append(ot.Normal([a, b], cov))
-        elif args.uncertainty == 'bootstrap':
+        elif args.uncertainty[0] == 'bootstrap':
             for k in range(estim.ncells):
+                lon, lat, a, b, stda, stdb, rho, mc, target_area = estim.grt_params[k, :]
                 elements[k][0].append(a)
                 elements[k][1].append(b)
         else:
             # Exit for-loop when not using bootstrapped results
             break
 
-    if args.uncertainty == 'mixture':
+    if args.uncertainty[0] == 'mixture':
         print("# UNCERTAINTY CALCULATION MODE:\nCharacterize the joint distribution for (a, b) as a mixture distribution of all " +
               "bootstrapped joint normal distributions")
         suffix4unc = '_mixture'
@@ -441,7 +443,7 @@ if __name__ == "__main__":
                 estim.grt_params[k, 5] = stds[1]  # std b-value
                 estim.grt_params[k, 6] = corrcoef  # Pearson correlation coefficient
 
-    elif args.uncertainty == 'bootstrap':
+    elif args.uncertainty[0] == 'bootstrap':
         print("# UNCERTAINTY CALCULATION MODE:\nAdjust a joint normal law on bootstrapped realizations of average (a, b) estimates")
         suffix4unc = '_bootstrap'
         for k in range(estim.ncells):
@@ -451,7 +453,7 @@ if __name__ == "__main__":
             estim.grt_params[k, 3] = bvalues.mean()
             estim.grt_params[k, 4] = avalues.std()
             estim.grt_params[k, 5] = bvalues.std()
-            estim.grt_params[k, 6] = np.corrcoef(avalues, bvalues)
+            estim.grt_params[k, 6] = np.corrcoef(avalues, y=bvalues)[0, 1]
 
     else:
         suffix4unc = ''
