@@ -13,6 +13,7 @@ from lib.ioutils import (ParameterSet,
                          load_points,
                          load_bins,
                          load_polygons)
+from lib.plotutils import ab_distrib_2d
 
 
 def load_ab_from_grid(filename, cell_index, return_centroid=False):
@@ -166,6 +167,12 @@ if __name__ == "__main__":
 
     # Make plot:
     print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
+    fig = ab_distrib_2d(af, bf, zf, arange=arange, brange=brange, amean=mean[0], bmean=mean[1],
+                        colmap="roma", is_colmap_reversed=True, nbins=100, draw_contours=True,
+                        inset_limits=limits, inset_polygon=polygon,
+                        filename=os.path.join(args.output_directory, f"ab_mixture_cell_{args.index}.png"))
+    """
+    print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
     dx = (brange[1] - brange[0]) / args.number_of_bins
     dy = (arange[1] - arange[0]) / args.number_of_bins
     grd = pygmt.xyz2grd(x=bf,
@@ -206,3 +213,4 @@ if __name__ == "__main__":
                  fill="red")
 
     fig.savefig(os.path.join(args.output_directory, f"ab_mixture_cell_{args.index}.png"), dpi=300)
+    """

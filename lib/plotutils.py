@@ -423,3 +423,70 @@ def map_bounds_and_cells(bounds: Polygon, cells: Polygon, events: MultiPoint = N
     fig.legend()
     fig.savefig(filename)
     print(f'Figure of bounds and cells saved in {filename}')
+
+
+def ab_distrib_2d(a_values, b_values, z_values, amean=None, bmean=None, arange=None, brange=None,
+                  colmap="roma", is_colmap_reversed=True, nbins=100, draw_contours=True,
+                  inset_limits=None, inset_polygon=None, filename=None):
+    """
+    Bi-dimensional plot of joint distribution for parameters (a, b)
+
+    param A_VALUES, B_VALUES and Z_VALUES: 1-dimensional np.ndarray of equal length for each point (x=b, y=a, z=z)
+    TODO: Check that function works properly!!
+    """
+    if (len(a_values) != len(b_values)) or (len(a_values) != len(z_values)) or (len(b_values) != len(z_values)):
+        raise ValueError('Length of values arrays do not match!')
+
+    dx = (brange[1] - brange[0]) / nbins
+    dy = (arange[1] - arange[0]) / nbins
+    zmin = z_values.min()
+    zmax = z_values.max()
+    zrange = zmax - zmin
+    if arange is None:
+        arange[0] = min(a_values)
+        arange[1] = max(a_values)
+    if brange is None:
+        brange[0] = min(b_values)
+        brange[1] = max(b_values)
+    grd = pygmt.xyz2grd(x=bf,
+                        y=af,
+                        z=zf,
+                        region=[brange[0] - dx, brange[1] + dx, arange[0] - dy, arange[1] + dy],
+                        spacing=f'{dx}/{dy}')
+    pygmt.makecpt(cmap=colmap, reverse=is_colmap_reversed, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
+
+    # --> 2-D probability distribution function:
+    fig = pygmt.Figure()
+    fig.basemap(projection="X15c", frame=["a"], region=[brange[0], brange[1], arange[0], arange[1]])
+    fig.grdimage(grid=grd, cmap=True)
+    if draw_contours:
+        grd_interval = zrange / 10
+        grd_annotation = "-"  # Disable all annotations
+        fig.grdcontour(grid=grd, levels=grd_interval, annotation=grd_annotation)
+    if (amean is not None) and (bmean is not None):
+        fig.plot(x=[bmean, bmean], y=[arange[0], amean], pen='1p,black,dotted')
+        fig.plot(x=[brange[0], bmean], y=[amean, amean], pen='1p,black,dotted', label='Mean')
+    fig.legend()
+    fig.colorbar(cmap=True, frame="xa+lPDF")
+
+    # --> Add inset with the polygon location (in red) over the whole model area in the inset:
+    if (inset_limits is not None) and (inset_polygon is not None):
+        with fig.inset(position="jBL+o12.0c/0.3c",
+                       box="+pblack",
+                       region=inset_limits,
+                       projection='M3.0c'):
+            fig.coast(
+                land="gray",
+                borders=1,
+                resolution="i",
+                water="white")
+            xp, yp = inset_polygon.exterior.xy
+            fig.plot(x=xp,
+                     y=yp,
+                     close=True,
+                     pen="0.2p,black,solid",
+                     fill="red")
+
+    if filename:
+        fig.savefig(filename, dpi=300)
+    return fig
