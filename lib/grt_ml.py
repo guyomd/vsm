@@ -65,9 +65,11 @@ class Dutfoy2020_Estimator():
         self.cnts = counts.reshape((1, self.nb))
         self.N = counts.sum()
         self.m0 = m0
-        self.mmax = mmax
-        if np.isinf(self.mmax):
-            raise ValueError("mmax cannot be infinity")
+        if np.isinf(mmax):
+            print('Warning! Cannot handle infinite Mmax --> replace with Mmax = 10.0.')
+            self.mmax = 10.0
+        else:
+            self.mmax = mmax
         self.dm = dm
         self.delta = self.dm / 2
 
@@ -178,7 +180,8 @@ class Dutfoy2020_Estimator():
         See eqn (18)
         """
         T0, T1, T2, U0, U1, U2 = self.TiUi(np.array([beta]))
-        return (T1 / T0) - (U1 / self.N)
+        beta_fun = (T1 / T0) - (U1 / self.N)
+        return beta_fun[0]
 
     def _beta_root_function_with_normal_prior(self, beta, mean_beta, std_beta):
         """
@@ -186,15 +189,15 @@ class Dutfoy2020_Estimator():
         probability on b (with mean=mean_b and std. dev.=std.b).
         """
         T0, T1, T2, U0, U1, U2 = self.TiUi(np.array([beta]))
-        return (T1 / T0) - (U1 / self.N) - (beta - mean_beta) / (self.N * std_beta ** 2)
+        beta_fun = (T1 / T0) - (U1 / self.N) - (beta - mean_beta) / (self.N * std_beta ** 2)
+        return beta_fun[0]
 
     def _mu_opt(self, beta_opt):
         """
         See eqn (17)
         """
-        T0 = self.TiUi(beta_opt)[0]
+        T0 = self.TiUi(np.array(beta_opt))[0]
         return (self.N * self.alpha(beta_opt)) / (2 * np.sinh(beta_opt * self.delta) * T0)
-
 
     def find_optimal_ab_no_prior(self):
         """
@@ -225,12 +228,13 @@ class Dutfoy2020_Estimator():
             can be incorrect.
         """
         beta0 = np.log(10)
-        res = minimize_scalar(self._beta_root_function,
+        fun = lambda x: np.abs(self._beta_root_function(x))
+        res = minimize_scalar(fun,
                               method='bounded',
                               bounds=[bounds_b[0] * np.log(10), bounds_b[1] * np.log(10)]
                               )
         N = np.sum(self.cnts * self.durs)
-        beta = res.x
+        beta = np.array([res.x])
         mu = self._mu_opt(beta)
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)))
@@ -244,11 +248,10 @@ class Dutfoy2020_Estimator():
         """
         mean_beta = mean_b * np.log(10)
         std_beta = std_b * np.log(10)
-        prior_args = (mean_beta, std_beta)
         beta0 = np.log(10)
-        res = root_scalar(self._beta_root_function_with_normal_prior,
-                          bracket=[0.1, 10.0],
-                          args=prior_args
+        fun = lambda x: self._beta_root_function_with_normal_prior(x, mean_beta, std_beta)
+        res = root_scalar(fun,
+                          bracket=[0.1, 10.0]
                           )
         N = np.sum(self.cnts)
         beta = np.array([res.root])
@@ -268,14 +271,13 @@ class Dutfoy2020_Estimator():
         """
         mean_beta = mean_b * np.log(10)
         std_beta = std_b * np.log(10)
-        prior_args = (mean_beta, std_beta)
-        res = minimize_scalar(self._beta_root_function_with_normal_prior,
+        fun = lambda x: np.abs(self._beta_root_function_with_normal_prior(x, mean_beta, std_beta))
+        res = minimize_scalar(fun,
                               method='bounded',
-                              bounds=[bounds_b[0] * np.log(10), bounds_b[1] * np.log(10)],
-                              args=prior_args
+                              bounds=[bounds_b[0] * np.log(10), bounds_b[1] * np.log(10)]
                               )
         N = np.sum(self.cnts * self.durs)
-        beta = res.x
+        beta = np.array([res.x])
         mu = self._mu_opt(beta)  # Note: similar to the case without prior
         a, b = self.mubeta2ab(np.array([[mu, beta]]))
         rho, cov = self.correlation_coef(np.array((a,b)), std_b=std_b)
@@ -312,18 +314,6 @@ class Dutfoy2020_Estimator():
         G = np.array([[G11, G12], [G12, G22]])
         return G
 
-    def _covariance_matrix_mubeta(self, mubeta: np.ndarray, std_beta=np.inf):
-        """
-        Compute covariance matrix around solution parameters (a, b)
-        for the truncated Gutenberg-Richter model.
-        See eqns (28), (29), (30) and (31)
-        Covariance matrix ordered as follows: cov = [[var(b), cov(b,a)], [cov(a,b), var(a)]]
-        """
-        mu = mubeta[0]
-        beta = mubeta[1]
-        G = self._fisher_information_matrix(np.array([mu, beta]), std_beta=std_beta)
-        return np.linalg.inv(G)  # [[Var(beta), Cov(mu, beta)], [Cov[mu, beta), Var(mu)]]
-
     def covariance_matrix(self, ab: np.ndarray, std_b=np.inf):
         """
         Compute covariance matrix around solution parameters (a, b)
@@ -337,8 +327,8 @@ class Dutfoy2020_Estimator():
               (self.mmax * np.exp(-beta[0] * self.mmax)) / (1 - np.exp(-beta[0] * self.mmax))
               ) / np.log(10)
         dgdx = np.array([[1 / np.log(10), 0.0], [h, 1 / (mu[0] * np.log(10))]])
-        cov_mubeta = self._covariance_matrix_mubeta((mu[0], beta[0]), std_beta=std_beta)
-        cov = dgdx @ cov_mubeta @ dgdx.T
+        G = self._fisher_information_matrix(np.array([mu[0], beta[0]]), std_beta=std_beta)
+        cov = dgdx @ np.linalg.inv(G) @ dgdx.T
         return cov
 
     def correlation_coef(self, ab: np.ndarray, std_b=np.inf):
@@ -349,4 +339,5 @@ class Dutfoy2020_Estimator():
         cov = self.covariance_matrix(ab, std_b=std_b)
         rho = cov[0, 1] / (np.sqrt(cov[0, 0]) * np.sqrt(cov[1, 1]))
         return rho, cov
+
 

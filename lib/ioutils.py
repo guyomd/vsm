@@ -394,11 +394,11 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
                 raise ValueError(f'{fmd_file}:: Found several lines with coordinates matching '
                                + f'({lons[i]:.6f}; {lats[i]}): {j}')
 
-            cellinfo[i, :2] = gridinfo[j, :2]  # Copy (lon, lat) values
+            cellinfo[i, :2] = np.squeeze(gridinfo[j, :2])  # Copy (lon, lat) values
 
             # Manage Mmin values:
             if mmin is None:
-                cellinfo[i, 2] = gridinfo[j, 2]  # Copy Mmin values
+                cellinfo[i, 2] = np.squeeze(gridinfo[j, 2])  # Copy Mmin values
             else:
                 if not mmin_mesg_displayed:
                     print(f'{fmd_file}:: WARNING! Overwrite MMIN with the value given in command-line ({mmin:.2f})')
@@ -422,7 +422,7 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
 
             # Update bin durations, if available in gridinfo:
             if gridinfo.shape[1] > 4:
-                mbins_durs_per_cell[i, :] = gridinfo[j, [4 + k for k in ibins]]
+                mbins_durs_per_cell[i, :] = np.squeeze(gridinfo[j, [4 + k for k in ibins]])
         print(f'{fmd_file}:: Loaded FMD parameters ({loaded_params}) for {ncells} cells')
 
     else:  # No file given

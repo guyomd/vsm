@@ -73,6 +73,7 @@ if __name__ == "__main__":
            
     # Load seismicity rates and truncated G-R parameters:
     inputfile = os.path.join(prms.output_dir, 'gridded_densities.txt')
+    print(f'>> INPUT: Load densities from file {inputfile}')
     estim = TruncatedGRestimator()
     # --> Rescale counts/densities at individual cell areas:
     pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))

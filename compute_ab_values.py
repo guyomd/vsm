@@ -174,8 +174,6 @@ class TruncatedGRestimator():
             cell_durations = cell_durations[ib]
             cell_mmid = self.bins['mids'][ib]
 
-
-
             # Eventually, define automatically the completeness threshold:
             if auto_mc:
                 imc = cell_intensities.argmax()
@@ -304,9 +302,8 @@ if __name__ == "__main__":
     # Read input arguments:
     parser = ArgumentParser(
         description="Compute (a, b) parameters of the frequency-magnitude distribution in each cell " \
-                    + "(NB: These parameters are obtained from densities rescaled at the area of each " \
-                    + "individual cell, before an eventual rescaling to the target reference area, unless " \
-                    + "option -s is set, in order to preserve the coherency of covariance estimates).")
+                    + "(NB: parameters are returned from densities rescaled at the area of each " \
+                    + "individual cell).")
     parser.add_argument("configfile",
                         nargs='?',
                         default="parameters.txt",
@@ -332,10 +329,14 @@ if __name__ == "__main__":
                         default=None,
                         type=float)
 
-    parser.add_argument("-p", "--from-bootstrapped-results",
-                        help="Estimate a- and b-values as the average of the mixture distribution aggregated from bivariate normal "\
-                            + "distributions of bootstrapped results",
-                       action="store_true")
+    parser.add_argument("-u", "--uncertainty",
+                        help="Uncertainty calculation mode from bootstrapped results: i) as a mixture distribution, " +
+                             "ii) as a normal distribution adjusted on average estimates, or iii) none " +
+                             "(when bootstrapping de-activated)",
+                        nargs=1,
+                        default='none',
+                        choices=['mixture', 'bootstrap', 'none'],
+                        type=str)
 
     args = parser.parse_args()
     
@@ -344,7 +345,7 @@ if __name__ == "__main__":
     prms.load_settings(args.configfile)
 
     # Load data:
-    if args.from_bootstrapped_results:
+    if args.uncertainty in ['bootstrap', 'mixture']:
         import openturns as ot
         outputdir = os.path.join(prms.output_dir, 'bootstrap')
         filelist = glob.glob(os.path.join(prms.output_dir, 'bootstrap', 'gridded_densities_bs_*.txt'))
@@ -362,9 +363,12 @@ if __name__ == "__main__":
     estim.areas = polareas
 
     # Loop over all 'gridded_densities*.txt' files:
-    first_pass = True
-    for inputfile in filelist:
+    if args.uncertainty == "mixture":
+        elements =[[] for k in range(estim.ncells)]
+    elif args.uncertainty == "bootstrap":
+        elements =[[[],[]] for k in range(estim.ncells)]
 
+    for inputfile in filelist:
         print(f'\n### PROCESSING FILE {inputfile}...');
         suffix4csv = os.path.basename(inputfile).replace('gridded_densities','').replace('.txt','')  # '_bs_XX' or '' file suffixes
 
@@ -372,9 +376,7 @@ if __name__ == "__main__":
         estim.load_densities(inputfile,
                              scaling_factor=area_scaling,
                              rescale_to_polygons_areas=polareas)
-        if first_pass:
-            first_pass = False
-            elements = [[] for k in range(estim.ncells)]
+
 
         estim.load_bins(prms.bins_file)
 
@@ -403,24 +405,29 @@ if __name__ == "__main__":
                   print_warnings=False,
                   b_truncation=args.b_truncation)
 
-        if args.from_bootstrapped_results:
-            # Save results individually:
+        if args.uncertainty in ['bootstrap', 'mixture']:
+            # Save results of bootstrapped realizations individually:
             estim.write_to_csv(os.path.join(outputdir, f'ab_values{suffix4csv}.txt'))
 
-        # Accumulate bootstrapped normal distributions of results for each cell:
-        if args.from_bootstrapped_results:
+        # Compute temporary results for current bootstrapped realization (if required) Accumulate bootstrapped normal distributions of results for each cell:
+        if args.uncertainty == 'mixture':
             for k in  range(estim.ncells):
                 lon, lat, a, b, stda, stdb, rho, mc, target_area = estim.grt_params[k, :]
                 if not np.isnan(a):
                     cov = ot.CovarianceMatrix(2, [stda ** 2, rho * stda * stdb, rho * stda * stdb, stdb ** 2])
                     elements[k].append(ot.Normal([a, b], cov))
+        elif args.uncertainty == 'bootstrap':
+            for k in range(estim.ncells):
+                elements[k][0].append(a)
+                elements[k][1].append(b)
         else:
-            # Quit for loop if not using bootstrapped results
+            # Exit for-loop when not using bootstrapped results
             break
 
-    if args.from_bootstrapped_results:
-        suffix4agg = '_aggregated'
-        
+    if args.uncertainty == 'mixture':
+        print("# UNCERTAINTY CALCULATION MODE:\nCharacterize the joint distribution for (a, b) as a mixture distribution of all " +
+              "bootstrapped joint normal distributions")
+        suffix4unc = '_mixture'
         # Build mixture distributions for each cell :
         for k in range(estim.ncells):
             if len(elements[k]) > 0:
@@ -434,10 +441,25 @@ if __name__ == "__main__":
                 estim.grt_params[k, 5] = stds[1]  # std b-value
                 estim.grt_params[k, 6] = corrcoef  # Pearson correlation coefficient
 
-        # Save results from mixture distributions:
-        print('\n>> Now generate GMT-formatted polygon files of GR parameters ONLY FOR aggregrated results:')
+    elif args.uncertainty == 'bootstrap':
+        print("# UNCERTAINTY CALCULATION MODE:\nAdjust a joint normal law on bootstrapped realizations of average (a, b) estimates")
+        suffix4unc = '_bootstrap'
+        for k in range(estim.ncells):
+            avalues = np.array(elements[k][0])
+            bvalues = np.array(elements[k][1])
+            estim.grt_params[k, 2] = avalues.mean()
+            estim.grt_params[k, 3] = bvalues.mean()
+            estim.grt_params[k, 4] = avalues.std()
+            estim.grt_params[k, 5] = bvalues.std()
+            estim.grt_params[k, 6] = np.corrcoef(avalues, bvalues)
+
     else:
-        suffix4agg = ''
-    estim.write_to_csv(os.path.join(prms.output_dir, f'ab_values{suffix4agg}.txt'))
-    estim.write_to_GMT_ASCII_tables(directory=prms.output_dir, suffix=suffix4agg)
+        suffix4unc = ''
+
+    if suffix4unc != '':
+        # Save results from mixture distributions:
+        print('\n>> Now generate GMT-formatted polygon files ONLY FOR average (a, b) parameters over bootstrapped realizations')
+
+    estim.write_to_csv(os.path.join(prms.output_dir, f'ab_values{suffix4unc}.txt'))
+    estim.write_to_GMT_ASCII_tables(directory=prms.output_dir, suffix=suffix4unc)
 
