@@ -36,7 +36,7 @@ def load_ab_from_grid(filename, cell_index, return_centroid=False):
 if __name__ == "__main__":
     
     # Read input arguments:
-    parser = ArgumentParser(description="Plot aggregated normal distributions from a- and b-values in a collection of files formatted like  'ab_values.txt'")
+    parser = ArgumentParser(description="Plot mixture of normal laws from distributions of a- and b-values in bootstrapped result files (formatted like  'ab_values.txt')")
     parser.add_argument("configfile", 
                         help="Configuration file")
 
@@ -205,4 +205,4 @@ if __name__ == "__main__":
                  pen="0.2p,black,solid",
                  fill="red")
 
-    fig.savefig(os.path.join(args.output_directory, f"ab_aggregate_distrib_cell_{args.index}.png"), dpi=300)
+    fig.savefig(os.path.join(args.output_directory, f"ab_mixture_cell_{args.index}.png"), dpi=300)
