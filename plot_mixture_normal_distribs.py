@@ -168,8 +168,8 @@ if __name__ == "__main__":
     # Make plot:
     print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
     fig = ab_distrib_2d(af, bf, zf, arange=arange, brange=brange, amean=mean[0], bmean=mean[1],
-                        colmap=args.colormap, is_colmap_reversed=True, nbins=args.number_of_bins, draw_contours=args.draw_contours,
-                        inset_limits=limits, inset_polygon=polygon,
+                        colmap=args.colormap, is_colmap_reversed=True, nbins=args.number_of_bins,
+                        draw_contours=args.draw_contours, inset_limits=limits, inset_polygon=polygon,
                         filename=os.path.join(args.output_directory, f"ab_mixture_cell_{args.index}.png"))
     """
     print(f">> Plot distribution for cell {args.index}, with centroid ({lonlat[0]}, {lonlat[1]})")
