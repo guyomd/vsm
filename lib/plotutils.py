@@ -448,9 +448,9 @@ def ab_distrib_2d(a_values, b_values, z_values, amean=None, bmean=None, arange=N
     if brange is None:
         brange[0] = min(b_values)
         brange[1] = max(b_values)
-    grd = pygmt.xyz2grd(x=bf,
-                        y=af,
-                        z=zf,
+    grd = pygmt.xyz2grd(x=b_values,
+                        y=a_values,
+                        z=z_values,
                         region=[brange[0] - dx, brange[1] + dx, arange[0] - dy, arange[1] + dy],
                         spacing=f'{dx}/{dy}')
     pygmt.makecpt(cmap=colmap, reverse=is_colmap_reversed, series=f'{zmin}/{zmax}/{0.01 * zrange}', background=True)
