@@ -87,7 +87,7 @@ class TruncatedGRestimator():
         Load FMD information (Mmin, Mmax, and optionally bin durations)
         Format: LON; LAT; MMIN; MMAX [; BIN_1_DURATION; ...; BIN_n_DURATION]
         Note:
-            Missing MMax can be indicated as -9 or NaN in the input file.
+            Missing Mmax can be indicated as -9 or NaN in the input file.
         """
         self.file_fmd = filename
         lons = self.densities[:, 0]
@@ -368,7 +368,7 @@ if __name__ == "__main__":
         print(f'\n### PROCESSING FILE {inputfile}...');
         suffix4csv = os.path.basename(inputfile).replace('gridded_densities','').replace('.txt','')  # '_bs_XX' or '' file suffixes
 
-        # NB: Calling next function affects a value to estim.ncells
+        # NB: Calling next function will affect a value to estim.ncells (used in "if first_pass" condition)
         estim.load_densities(inputfile,
                              scaling_factor=area_scaling,
                              rescale_to_polygons_areas=polareas)

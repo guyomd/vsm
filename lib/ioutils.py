@@ -359,6 +359,8 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
         mbins_durs_per_cell[i, :] = mbins_durs
 
     cellinfo = np.ones((ncells, 4))  # For series of (lon, lat, mmin, mmax)
+    cellinfo[:, 0] = lons
+    cellinfo[:, 1] = lats
     if isinstance(fmd_file, str):
         print(f'>> Read limits (and optionally, durations) of freq.-mag. '
               + f'distributions in "{fmd_file}"')
@@ -383,16 +385,16 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
         mmin_mesg_displayed = False
         mmax_mesg_displayed = False
         for i in range(ncells):
-            j = np.where((np.abs(gridinfo[:, 0] - lons[i]) < coord_precision) & \
-                         (np.abs(gridinfo[:, 1] - lats[i]) < coord_precision) )[0]
+            j = np.where((np.abs(gridinfo[:, 0] - cellinfo[i, 0]) < coord_precision) & \
+                         (np.abs(gridinfo[:, 1] - cellinfo[i, 1]) < coord_precision) )[0]
             if len(j) == 0:
                 if verbose:
                     print(f'{fmd_file}:: No match for cell with centroid at ' +
-                          f'({lons[i]:.6f}; {lats[i]})')
+                          f'({cellinfo[i, 0]:.6f}; {cellinfo[i, 1]})')
                 continue
             elif len(j) > 1:
                 raise ValueError(f'{fmd_file}:: Found several lines with coordinates matching '
-                               + f'({lons[i]:.6f}; {lats[i]}): {j}')
+                               + f'({cellinfo[i, 0]:.6f}; {cellinfo[i, 1]}): {j}')
 
             cellinfo[i, :2] = np.squeeze(gridinfo[j, :2])  # Copy (lon, lat) values
 
@@ -439,8 +441,6 @@ def load_fmd_file(mbins_file, lons, lats, fmd_file=None, ibins=None, mmin=None, 
             print(f'>> MMAX: Use an untruncated Gutenberg-Richter model')
         else:
             print(f'>> MMAX: Use the value given in command-line for all pixels ({mmax:.2f})')
-        cellinfo[:, 0] = lons
-        cellinfo[:, 1] = lats
         cellinfo[:, 2] = mmin
         cellinfo[:, 3] = mmax
     return cellinfo, mbins_durs_per_cell
