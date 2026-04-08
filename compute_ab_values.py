@@ -244,6 +244,10 @@ class TruncatedGRestimator():
             stdb = np.sqrt(cov[0, 0])   # Uncertainties for counts/densities rescaled at the polygon area !!
             stda = np.sqrt(cov[1, 1])
             target_area = self.areas[i]
+            if a < 0:
+                raise ValueError(f'ERROR: Negative a-value obtained for cell {i}!' +
+                                 f'\n--> Intensities = {cell_intensities}' +
+                                 f'\n--> Durations = {cell_durations}')
             self.grt_params[i, :] = np.array([lon, lat, a, b, stda, stdb, rho, mc, target_area])
 
 

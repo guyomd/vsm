@@ -42,10 +42,11 @@ if __name__ == "__main__":
                         help="Do not overlay FMD model adjustment",
                         action='store_true')
 
-    parser.add_argument("-p", "--from-bootstrapped-results",
-                        help="Get a- and b-values from the mixture distribution aggregated from bivariate normal "\
-                            + "distributions of bootstrapped results",
-                       action="store_true")
+    parser.add_argument("-u", "--use-bootstrap-results",
+                        help="Read a- and b-values from the mixture distribution or from bootstrapped results",
+                        nargs=1,
+                        default=None,
+                        choices=['mixture', 'bootstrap'])
 
     args = parser.parse_args()
     
@@ -89,10 +90,11 @@ if __name__ == "__main__":
 
     # Load (a, b) parameters values:
     # --> NB: values obtained for counts/densities already scaled at individual cell areas!
-    if args.from_bootstrapped_results:
-        grt_prms = np.loadtxt(os.path.join(prms.output_dir, 'ab_values_aggregated.txt'), delimiter=';')
-    else:
+    if args.use_bootstrap_results is None:
         grt_prms = np.loadtxt(os.path.join(prms.output_dir, 'ab_values.txt'), delimiter=';')
+    else:
+        grt_prms = np.loadtxt(os.path.join(prms.output_dir, f'ab_values_{args.use_bootstrap_results[0]}.txt'),
+                              delimiter=';')
 
     if estim.cellinfo is None:
         xy = grt_prms[:, :2]  # Longitudes, Latitudes
