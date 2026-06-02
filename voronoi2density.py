@@ -401,7 +401,7 @@ class VoronoiSmoothingAlgorithm:
         if self.prms.nb_bootstrap_samples == 0:
             self.prms.nb_parallel_tasks = 1  # Force run on single core
             _, counts, cell_densities_km2, col_titles = self.create_density_maps_for_all_bins(
-                0, magbins, mp_epic_m, mags, dates, weights, bounds_m, cells, cells_m, uncert,
+                0, magbins, mp_epic_m, mags, dates, weights, bounds_m, cells, cells_m,
                 counts, cell_densities_km2, suffix, outputdir, False, True)
 
         elif self.prms.nb_bootstrap_samples > 0:
