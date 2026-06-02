@@ -345,8 +345,9 @@ if __name__ == "__main__":
     prms.load_settings(args.configfile)
 
     # Load data:
-    if args.uncertainty[0] in ['bootstrap', 'mixture']:
+    if args.uncertainty[0] == 'mixture':
         import openturns as ot
+    if args.uncertainty[0] in ['bootstrap', 'mixture']:
         outputdir = os.path.join(prms.output_dir, 'bootstrap')
         filelist = glob.glob(os.path.join(prms.output_dir, 'bootstrap', 'gridded_densities_bs_*.txt'))
     else:
