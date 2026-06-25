@@ -360,6 +360,7 @@ if __name__ == "__main__":
     pols, _ = load_polygons(os.path.join(prms.output_dir, 'counts_bin_1.txt'))
     pols_m = convert_to_EPSG(pols, in_epsg=prms.input_epsg, out_epsg=prms.internal_epsg)
     polareas = np.array([pol.area * (prms.epsg_scaling2km ** 2) for pol in pols_m.geoms])  # in km^2
+    # Define coefficient to express densities per km^2:
     area_scaling = 1 / prms.density_scaling_factor
     estim.areas = polareas
 

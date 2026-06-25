@@ -183,6 +183,7 @@ class VoronoiSmoothingAlgorithm:
                                                   weights,
                                                   scaling2unit=self.prms.epsg_scaling2km,
                                                   log_values=False)
+        # Scale density using density_scaling_factor (in km^2):
         vor_densities_km2 *= self.prms.density_scaling_factor
 
         # Project Voronoi polygons in the input CRS:
